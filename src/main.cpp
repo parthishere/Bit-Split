@@ -10,9 +10,8 @@
 #define LENGTH_EPC 12      // Bytes
 #define LENGTH_CRC 2       // Bytes
 
-char receivedByte[9], *p;
-int temp, intNumber, count = 0, count_t, totalpackets;
-byte tdata[] = {};
+int count = 0, count_t = 0, totalpackets = 0;
+byte tdata[100];
 bool initial = true;
 
 // initial_sequance = {2, 2, 1};
@@ -31,38 +30,56 @@ void setup()
 void loop()
 {
 
-  while (Serial2.available())
+  while (Serial2.available() > 0)
   {
     if (initial)
     {
       totalpackets = Serial2.read();
-      Serial.printf("%d", totalpackets);
+      totalpackets += 1;
       count_t = totalpackets;
-      byte tdata[totalpackets];
+      tdata[count_t];
       initial = false;
-      Serial.printf("%d ", count);
     }
     else
     {
-      tdata[totalpackets - 1] = Serial2.read();
-      Serial.printf("%02X ", tdata[totalpackets - 1]);
       totalpackets--;
-
-      if (totalpackets == -1)
+      if (totalpackets >= 0 && totalpackets < count_t)
       {
+        tdata[totalpackets] = Serial2.read();
+      }
 
+      // Serial.printf("total packets ");
+      // Serial.printf("%d ", totalpackets);
+      // Serial.printf("Count ");
+      // Serial.printf(" %d ", count_t);
+      // Serial.printf("Data ");
+      // Serial.printf("%02X ", tdata[totalpackets]);
+      // Serial.printf("\n");
+
+      if (totalpackets == 0)
+      {
+        int start = 0;
+        int en = count_t;
         initial = true;
-        Serial.println(" ");
-        for (int i = 0; i < count_t + 1; i++)
+        
+        while (start < en)
+        {
+
+          byte temp = tdata[start];
+          tdata[start] = tdata[en];
+          tdata[en] = temp;
+          start++;
+          en--;
+        }
+
+        for (int i = 0; i < count_t; i++)
         {
           Serial.printf("%02X ", tdata[i]);
         }
-        Serial.println(" ");
-        // Serial.printf("\n%X %X %X %X %X %X %X %X %X %X %X %X %X %X %X %X %X %X %X %X %X\n\n", tdata[0], tdata[1], tdata[2], tdata[3], tdata[4], tdata[5], tdata[6], tdata[7], tdata[8], tdata[9], tdata[10], tdata[11], tdata[12], tdata[13], tdata[14], tdata[15], tdata[16], tdata[17], tdata[18], tdata[19], tdata[20]);
+        Serial.printf("\n");
         break;
       }
     }
+    // do the task that is related to variable;
   }
-
-  // do the task that is related to variable;
 }
