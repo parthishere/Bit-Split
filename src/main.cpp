@@ -58,18 +58,13 @@ void loop()
 
       if (totalpackets == 0)
       {
-        int start = 0;
-        int en = count_t;
-        initial = true;
-        
-        while (start < en)
-        {
 
-          byte temp = tdata[start];
-          tdata[start] = tdata[en];
-          tdata[en] = temp;
-          start++;
-          en--;
+        initial = true;
+        for (int i = 0; i < count_t / 2; i++)
+        {
+          byte temp = tdata[i];
+          tdata[i] = tdata[count_t - i - 1];
+          tdata[count_t - i - 1] = temp;
         }
 
         for (int i = 0; i < count_t; i++)
