@@ -80,12 +80,11 @@ void loop()
         for (int i = 1; i <= num_cards; i++)
         {
           int index = (13 * (num_cards - 1)) + 5 + num_cards - i;
-          Serial.printf("index %d \n", index);
           rssi[i - 1] = tdata[index];
         }
         for (int i = 0; i < num_cards; i++)
         {
-          Serial.printf("RSSI of card %d is %02X", i + 1, rssi[i]);
+          Serial.printf("RSSI of card %d is %d", i + 1, rssi[i]);
         }
         Serial.printf("\n");
 
