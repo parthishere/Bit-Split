@@ -44,20 +44,20 @@ void loop()
     }
     else
     {
-      tdata[totalpackets] = Serial2.read();
-      Serial.printf("%02X ", tdata[count - 1]);
+      tdata[totalpackets - 1] = Serial2.read();
+      Serial.printf("%02X ", tdata[totalpackets - 1]);
       totalpackets--;
 
       if (totalpackets == -1)
       {
 
         initial = true;
-        Serial.println();
+        Serial.println(" ");
         for (int i = 0; i < count_t + 1; i++)
         {
           Serial.printf("%02X ", tdata[i]);
         }
-        Serial.println();
+        Serial.println(" ");
         // Serial.printf("\n%X %X %X %X %X %X %X %X %X %X %X %X %X %X %X %X %X %X %X %X %X\n\n", tdata[0], tdata[1], tdata[2], tdata[3], tdata[4], tdata[5], tdata[6], tdata[7], tdata[8], tdata[9], tdata[10], tdata[11], tdata[12], tdata[13], tdata[14], tdata[15], tdata[16], tdata[17], tdata[18], tdata[19], tdata[20]);
         break;
       }
