@@ -11,9 +11,8 @@
 #define LENGTH_CRC 2       // Bytes
 
 char receivedByte[9], *p;
-byte totalpackets, tdata[20];
-;
-int temp, intNumber, count = 0;
+int temp, intNumber, count = 0, count_t, totalpackets;
+byte tdata[] = {};
 bool initial = true;
 
 // initial_sequance = {2, 2, 1};
@@ -31,33 +30,37 @@ void setup()
 
 void loop()
 {
-  byte tdata[] = {};
+
   while (Serial2.available())
   {
     if (initial)
     {
-      Serial.println("\n\ninitialized");
       totalpackets = Serial2.read();
-      Serial.printf("%02X\n", totalpackets);
-      sprintf(receivedByte, "0x%02X", totalpackets);
-      intNumber = strtol(receivedByte, &p, 16);
-      count = intNumber + 1;
-      byte tdata[count];
+      Serial.printf("%d", totalpackets);
+      count_t = totalpackets;
+      byte tdata[totalpackets];
       initial = false;
+      Serial.printf("%d ", count);
     }
     else
     {
-      tdata[count - 1] = Serial2.read();
-      count--;
-    }
+      tdata[totalpackets] = Serial2.read();
+      Serial.printf("%02X ", tdata[count - 1]);
+      totalpackets--;
 
-    if (count == 0)
-    {
-      initial = true;
-      // Just for printing the data we wont print the data hardcoded
-      SerialBT.printf("%X %X %X %X %X %X %X %X %X %X %X %X %X %X %X %X %X %X %X %X %X", tdata[0], tdata[1], tdata[2], tdata[3], tdata[4], tdata[5], tdata[6], tdata[7], tdata[8], tdata[9], tdata[10], tdata[11], tdata[12], tdata[13], tdata[14], tdata[15], tdata[16], tdata[17], tdata[18], tdata[19], tdata[20]);
-      Serial.printf("%X %X %X %X %X %X %X %X %X %X %X %X %X %X %X %X %X %X %X %X %X", tdata[0], tdata[1], tdata[2], tdata[3], tdata[4], tdata[5], tdata[6], tdata[7], tdata[8], tdata[9], tdata[10], tdata[11], tdata[12], tdata[13], tdata[14], tdata[15], tdata[16], tdata[17], tdata[18], tdata[19], tdata[20]);
-      break;
+      if (totalpackets == -1)
+      {
+
+        initial = true;
+        Serial.println();
+        for (int i = 0; i < count_t + 1; i++)
+        {
+          Serial.printf("%02X ", tdata[i]);
+        }
+        Serial.println();
+        // Serial.printf("\n%X %X %X %X %X %X %X %X %X %X %X %X %X %X %X %X %X %X %X %X %X\n\n", tdata[0], tdata[1], tdata[2], tdata[3], tdata[4], tdata[5], tdata[6], tdata[7], tdata[8], tdata[9], tdata[10], tdata[11], tdata[12], tdata[13], tdata[14], tdata[15], tdata[16], tdata[17], tdata[18], tdata[19], tdata[20]);
+        break;
+      }
     }
   }
 
