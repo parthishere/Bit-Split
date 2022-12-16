@@ -23,6 +23,8 @@ void setup()
   // put your setup code here, to run once:
   Serial.begin(115200);
   Serial2.begin(115200);
+  delay(1000);
+  Serial1.begin(9600, SERIAL_8N1, 4, 2); // RX, TX
   SerialBT.begin();
   Serial.println("Bluetooth Started! Ready to pair...");
 }
@@ -48,14 +50,6 @@ void loop()
         tdata[totalpackets] = Serial2.read();
       }
 
-      // Serial.printf("total packets ");
-      // Serial.printf("%d ", totalpackets);
-      // Serial.printf("Count ");
-      // Serial.printf(" %d ", count_t);
-      // Serial.printf("Data ");
-      // Serial.printf("%02X ", tdata[totalpackets]);
-      // Serial.printf("\n");
-
       if (totalpackets == 0)
       {
 
@@ -72,24 +66,37 @@ void loop()
           Serial.printf("%02X ", tdata[i]);
         }
 
-        // Number of cards
         int num_cards = tdata[4];
-        Serial.printf("num of cards: %d\n", num_cards);
+        Serial.printf("\nnum of cards: %d\n", num_cards);
+        Serial1.write("CARDS_NUM");
+        Serial1.write(num_cards);
+
         // RSSI
-        int rssi[10];
+        byte rssi[num_cards];
+        Serial1.write("RSSI");
         for (int i = 1; i <= num_cards; i++)
         {
-          int index = (13 * (num_cards - 1)) + 5 + num_cards - i;
+          int index = (13 * (i - 1)) + 5;
           rssi[i - 1] = tdata[index];
+          Serial.printf("\nRSSI of card %d is %d", i, rssi[i - 1]);
         }
-        for (int i = 0; i < num_cards; i++)
-        {
-          Serial.printf("RSSI of card %d is %d", i + 1, rssi[i]);
-        }
-        Serial.printf("\n");
+        Serial1.write(rssi, sizeof(rssi) / sizeof(byte));
 
         // EPC
-        byte epc[12][10];
+        byte epc[10][12];
+        Serial.printf("\nData of Cards: ");
+        for (int i = 0; i < num_cards; i++)
+        {
+          Serial1.write("CARD_DATA");
+          for (int j = 0; j < 12; j++)
+          {
+            int index = (13 * (i)) + 7 + j;
+            epc[i][j] = tdata[index];
+            Serial.printf("%02X ", epc[i][j]);
+            Serial1.write(epc[i][j]);
+          }
+          Serial.printf("\n");
+        }
 
         Serial.printf("\n");
         break;
