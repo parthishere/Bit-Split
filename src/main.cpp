@@ -37,6 +37,10 @@ void loop()
     if (initial)
     {
       totalpackets = Serial2.read();
+      if (totalpackets > 60)
+      {
+        break;
+      }
       totalpackets += 1;
       count_t = totalpackets;
       tdata[count_t];
@@ -67,13 +71,13 @@ void loop()
         }
 
         int num_cards = tdata[4];
-        Serial.printf("\nnum of cards: %d\n", num_cards);
-        Serial1.write("CARDS_NUM");
+        Serial.printf("\nnum of cards: %d", num_cards);
+        Serial1.println("CARDS_NUM");
         Serial1.write(num_cards);
-
+        Serial1.println("\n");
         // RSSI
         byte rssi[num_cards];
-        Serial1.write("RSSI");
+        Serial1.println("RSSI");
         for (int i = 1; i <= num_cards; i++)
         {
           int index = (13 * (i - 1)) + 5;
@@ -81,20 +85,21 @@ void loop()
           Serial.printf("\nRSSI of card %d is %d", i, rssi[i - 1]);
         }
         Serial1.write(rssi, sizeof(rssi) / sizeof(byte));
-
+        Serial1.println("\n");
         // EPC
         byte epc[10][12];
-        Serial.printf("\nData of Cards: ");
+        Serial.printf("\nData of Cards:");
         for (int i = 0; i < num_cards; i++)
         {
-          Serial1.write("CARD_DATA");
+          Serial1.println("CARD_DATA");
           for (int j = 0; j < 12; j++)
           {
             int index = (13 * (i)) + 7 + j;
             epc[i][j] = tdata[index];
             Serial.printf("%02X ", epc[i][j]);
-            Serial1.write(epc[i][j]);
           }
+          Serial1.write(epc[i], 12);
+          Serial1.println("\n");
           Serial.printf("\n");
         }
 
