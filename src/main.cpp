@@ -2,29 +2,26 @@
 
 #include "BluetoothSerial.h"
 
-#define LENGTH_CMD 2       // Bytes
-#define LENGTH_ECODE 2     // Bytes
-#define LENGTH_TOTALCARD 1 // Bytes
-#define LENGTH_RSSI 1      // Bytes
-#define LENGTH_EPC_LEN 1   // Bytes
-#define LENGTH_EPC 12      // Bytes
-#define LENGTH_CRC 2       // Bytes
-
 int count = 0, count_t = 0, totalpackets = 0;
-byte tdata[100];
+byte tdata[200];
 bool initial = true;
 
-// initial_sequance = {2, 2, 1};
-
 BluetoothSerial SerialBT;
+
+struct CardData
+{
+  byte rssi;
+  byte epc[12];
+};
 
 void setup()
 {
   // put your setup code here, to run once:
+
   Serial.begin(115200);
   Serial2.begin(115200);
   delay(1000);
-  Serial1.begin(9600, SERIAL_8N1, 4, 2); // RX, TX
+  // Serial1.begin(9600, SERIAL_8N1, 4, 2); // RX, TX
   SerialBT.begin();
   Serial.println("Bluetooth Started! Ready to pair...");
 }
@@ -37,7 +34,7 @@ void loop()
     if (initial)
     {
       totalpackets = Serial2.read();
-      if (totalpackets > 60)
+      if (totalpackets != 34 && totalpackets != 20 && totalpackets != 48)
       {
         break;
       }
@@ -72,34 +69,32 @@ void loop()
 
         int num_cards = tdata[4];
         Serial.printf("\nnum of cards: %d", num_cards);
-        Serial1.println("CARDS_NUM");
-        Serial1.write(num_cards);
-        Serial1.println("\n");
         // RSSI
+
+        // CardData cardData[num_cards];
         byte rssi[num_cards];
-        Serial1.println("RSSI");
+
         for (int i = 1; i <= num_cards; i++)
         {
           int index = (13 * (i - 1)) + 5;
+          // cardData[i].rssi = tdata[index];
           rssi[i - 1] = tdata[index];
           Serial.printf("\nRSSI of card %d is %d", i, rssi[i - 1]);
         }
-        Serial1.write(rssi, sizeof(rssi) / sizeof(byte));
-        Serial1.println("\n");
+
         // EPC
         byte epc[10][12];
         Serial.printf("\nData of Cards:");
         for (int i = 0; i < num_cards; i++)
         {
-          Serial1.println("CARD_DATA");
           for (int j = 0; j < 12; j++)
           {
             int index = (13 * (i)) + 7 + j;
             epc[i][j] = tdata[index];
+            // cardData[i].epc[j] = tdata[index];
             Serial.printf("%02X ", epc[i][j]);
           }
-          Serial1.write(epc[i], 12);
-          Serial1.println("\n");
+
           Serial.printf("\n");
         }
 
