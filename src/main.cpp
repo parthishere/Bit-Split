@@ -69,7 +69,7 @@ void loop()
 
           for (int i = 1; i <= num_cards; i++)
           {
-            int index = (13 * (i - 1)) + 5;
+            int index = (13 * (i - 1)) + 5 + (i - 1);
             rssi[i - 1] = tdata[index];
             Serial.printf("\nRSSI of card %d is %d", i, rssi[i - 1]);
           }
@@ -81,7 +81,7 @@ void loop()
           {
             for (int j = 0; j < 12; j++)
             {
-              int index = (13 * (i)) + 7 + j;
+              int index = (13 * (i)) + 7 + j + i;
               epc[i][j] = tdata[index];
               Serial.printf("%02X ", epc[i][j]);
             }
@@ -92,7 +92,7 @@ void loop()
           Serial.printf("\n");
           break;
         }
-        catch (char *excp)
+        catch (...)
         {
           Serial.print("Error");
         }
