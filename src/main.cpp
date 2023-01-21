@@ -56,11 +56,6 @@ void loop()
             tdata[count_t - i - 1] = temp;
           }
 
-          for (int i = 0; i < count_t; i++)
-          {
-            Serial.printf("%02X ", tdata[i]);
-          }
-
           int num_cards = tdata[4];
           Serial.printf("\nnum of cards: %d", num_cards);
           // RSSI
