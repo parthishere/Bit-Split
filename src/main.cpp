@@ -27,7 +27,7 @@ void loop()
     if (initial)
     {
       totalpackets = Serial2.read();
-      if (totalpackets != 34 && totalpackets != 20 && totalpackets != 48)
+      if (totalpackets != 34 && totalpackets != 20 && totalpackets != 48 && totalpackets != 62 && totalpackets != 76 && totalpackets != 90 && totalpackets != 104)
       {
         break;
       }
@@ -65,20 +65,26 @@ void loop()
           for (int i = 1; i <= num_cards; i++)
           {
             int index = (13 * (i - 1)) + 5 + (i - 1);
-            rssi[i - 1] = tdata[index];
-            Serial.printf("\nRSSI of card %d is %d", i, rssi[i - 1]);
+            if (index < (count_t - 1))
+            {
+              rssi[i - 1] = tdata[index];
+              Serial.printf("\nRSSI of card %d is %d", i, rssi[i - 1]);
+            }
           }
 
           // EPC
-          byte epc[10][12];
+          byte epc[num_cards][12];
           Serial.printf("\nData of Cards:");
           for (int i = 0; i < num_cards; i++)
           {
             for (int j = 0; j < 12; j++)
             {
               int index = (13 * (i)) + 7 + j + i;
-              epc[i][j] = tdata[index];
-              Serial.printf("%02X ", epc[i][j]);
+              if (index < (count_t - 1))
+              {
+                epc[i][j] = tdata[index];
+                Serial.printf("%02X ", epc[i][j]);
+              }
             }
 
             Serial.printf("\n");
