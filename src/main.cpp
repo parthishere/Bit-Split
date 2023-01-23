@@ -58,10 +58,13 @@ void loop()
 
           int num_cards = tdata[4];
           Serial.printf("\nnum of cards: %d", num_cards);
+          SerialBT.print("NUM ");
+          SerialBT.print(static_cast<int>(num_cards));
           // RSSI
 
           byte rssi[num_cards];
-
+          SerialBT.print("");
+          SerialBT.print("RSSI");
           for (int i = 1; i <= num_cards; i++)
           {
             int index = (13 * (i - 1)) + 5 + (i - 1);
@@ -69,12 +72,15 @@ void loop()
             {
               rssi[i - 1] = tdata[index];
               Serial.printf("\nRSSI of card %d is %d", i, rssi[i - 1]);
+              SerialBT.print(rssi[i - 1]);
+              SerialBT.print(" ");
             }
           }
 
           // EPC
           byte epc[num_cards][12];
           Serial.printf("\nData of Cards:");
+          SerialBT.print(" DATA ");
           for (int i = 0; i < num_cards; i++)
           {
             for (int j = 0; j < 12; j++)
@@ -84,12 +90,13 @@ void loop()
               {
                 epc[i][j] = tdata[index];
                 Serial.printf("%02X ", epc[i][j]);
+                SerialBT.print(epc[i][j]);
               }
             }
-
+            SerialBT.print(" ");
             Serial.printf("\n");
           }
-
+          SerialBT.print("\n");
           Serial.printf("\n");
           break;
         }
