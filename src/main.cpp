@@ -63,8 +63,8 @@ void loop()
           // RSSI
 
           byte rssi[num_cards];
-          SerialBT.print("");
-          SerialBT.print("RSSI");
+          SerialBT.print(" ");
+          SerialBT.print(" RSSI ");
           for (int i = 1; i <= num_cards; i++)
           {
             int index = (13 * (i - 1)) + 5 + (i - 1);
@@ -96,7 +96,7 @@ void loop()
             SerialBT.print(" ");
             Serial.printf("\n");
           }
-          SerialBT.print("\n");
+          SerialBT.println("\n");
           Serial.printf("\n");
           break;
         }
