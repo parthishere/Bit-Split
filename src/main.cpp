@@ -14,6 +14,8 @@ const int resolution = 8;
 
 long int last_millis;
 
+void change_delay(int intensity);
+
 BluetoothSerial SerialBT;
 
 /*
@@ -38,10 +40,10 @@ void setup()
   Serial.println("Bluetooth Started! Ready to pair...");
   pinMode(buzPin, OUTPUT);
   pinMode(potPin, INPUT);
-  pinMode(b1pin, INPUT);
-  pinMode(b2pin, INPUT);
-  pinMode(b3pin, INPUT);
-  pinMode(b4pin, INPUT);
+  pinMode(b1pin, INPUT_PULLUP);
+  pinMode(b2pin, INPUT_PULLUP);
+  pinMode(b3pin, INPUT_PULLUP);
+  pinMode(b4pin, INPUT_PULLUP);
 
   ledcSetup(ledChannel, freq, resolution);
 
@@ -107,6 +109,10 @@ void loop()
               SerialBT.print(" ");
 
               intensity = map(rssi[i - 1], 30, 70, 1, 5);
+              if (num_cards == 1)
+              {
+                change_delay(intensity);
+              }
             }
           }
 
@@ -142,6 +148,24 @@ void loop()
     // do the task that is related to variable;
   }
 
+  // Serial.println(digitalRead(b1pin));
+  // Serial.println(digitalRead(b2pin));
+  // Serial.println(digitalRead(b3pin));
+  // Serial.println(digitalRead(b4pin));
+  if ((millis() - last_millis) > delay_buz)
+  {
+    last_millis = millis();
+    ledcWrite(ledChannel, map(analogRead(potPin), 0, 4095, 0, 255));
+  }
+  else
+  {
+    ledcWrite(ledChannel, 0);
+  }
+  delay(1000);
+}
+
+void change_delay(int intensity)
+{
   switch (intensity)
   {
   case -1:
@@ -188,18 +212,10 @@ void loop()
     delay_buz = 2000;
     break;
   }
+}
 
-  Serial.println();
-  Serial.println("delay_buzz");
-  Serial.println(delay_buz);
-
-  if ((millis() - last_millis) > delay_buz)
-  {
-    last_millis = millis();
-    ledcWrite(ledChannel, map(analogRead(potPin), 0, 4095, 0, 255));
-  }
-  else
-  {
-    ledcWrite(ledChannel, 0);
-  }
+int calculate_distance(int rssi)
+{
+  
+  return 0;
 }
