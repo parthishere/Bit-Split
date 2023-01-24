@@ -148,10 +148,6 @@ void loop()
     // do the task that is related to variable;
   }
 
-  // Serial.println(digitalRead(b1pin));
-  // Serial.println(digitalRead(b2pin));
-  // Serial.println(digitalRead(b3pin));
-  // Serial.println(digitalRead(b4pin));
   if ((millis() - last_millis) > delay_buz)
   {
     last_millis = millis();
@@ -216,6 +212,6 @@ void change_delay(int intensity)
 
 int calculate_distance(int rssi)
 {
-  
+
   return 0;
 }
