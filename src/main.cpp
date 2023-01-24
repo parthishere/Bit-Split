@@ -2,13 +2,17 @@
 
 #include "BluetoothSerial.h"
 
+int buzPin = 32, potPin = 4, b1pin = 27, b2pin = 26, b3pin = 25, b4pin = 33;
+
 int count = 0, count_t = 0, totalpackets = 0;
 byte tdata[200];
 bool initial = true;
-int buzPin = 12, delay_buz, intensity;
+int delay_buz, intensity;
 const int freq = 5000;
 const int ledChannel = 0;
 const int resolution = 8;
+
+long int last_millis;
 
 BluetoothSerial SerialBT;
 
@@ -20,6 +24,7 @@ D27 : B1
 D26 : B2
 D25 : B3
 D33 : B4
+pot : D4
 */
 
 void setup()
@@ -31,6 +36,13 @@ void setup()
   delay(1000);
   SerialBT.begin();
   Serial.println("Bluetooth Started! Ready to pair...");
+  pinMode(buzPin, OUTPUT);
+  pinMode(potPin, INPUT);
+  pinMode(b1pin, INPUT);
+  pinMode(b2pin, INPUT);
+  pinMode(b3pin, INPUT);
+  pinMode(b4pin, INPUT);
+
   ledcSetup(ledChannel, freq, resolution);
 
   // attach the channel to the GPIO to be controlled
@@ -90,13 +102,11 @@ void loop()
             if (index < (count_t - 1))
             {
               rssi[i - 1] = tdata[index];
-              rssi_int[i - 1] = tdata[index];
-
               Serial.printf("\nRSSI of card %d is %d", i, rssi[i - 1]);
               SerialBT.print(rssi[i - 1]);
-              rssi_int[i - 1] = map(rssi_int[i - 1], 36, 70, 1, 5);
-              Serial.print(rssi_int[i - 1]);
               SerialBT.print(" ");
+
+              intensity = map(rssi[i - 1], 30, 70, 1, 5);
             }
           }
 
@@ -178,11 +188,18 @@ void loop()
     delay_buz = 2000;
     break;
   }
-  Serial.print("delay_buzz");
+
+  Serial.println();
+  Serial.println("delay_buzz");
   Serial.println(delay_buz);
 
-  ledcWrite(ledChannel, 255);
-  delay(delay_buz);
-  ledcWrite(ledChannel, 0);
-  delay(delay_buz);
+  if ((millis() - last_millis) > delay_buz)
+  {
+    last_millis = millis();
+    ledcWrite(ledChannel, map(analogRead(potPin), 0, 4095, 0, 255));
+  }
+  else
+  {
+    ledcWrite(ledChannel, 0);
+  }
 }
