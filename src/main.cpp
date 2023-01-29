@@ -2,6 +2,9 @@
 
 #include "BluetoothSerial.h"
 
+#include <TFT_eSPI.h> // Hardware-specific library
+#include <SPI.h>
+
 int buzPin = 32, potPin = 4, b1pin = 27, b2pin = 26, b3pin = 25, b4pin = 33;
 
 #define LCD_CS A3 // Chip Select goes to Analog 3
@@ -18,15 +21,15 @@ int buzPin = 32, potPin = 4, b1pin = 27, b2pin = 26, b3pin = 25, b4pin = 33;
 #define YELLOW 0xFFE0
 #define WHITE 0xFFFF
 #define PINK 0xEB34
-#define LIGHT_PINK 0x92f53b
-#define LIGHT_PURPLE 0x865b94
-#define LIGHT_BLUE 0x9933ff
+#define LIGHT_PINK 0x9f3b
+#define LIGHT_PURPLE 0x8594
+#define LIGHT_BLUE 0x93ff
 #define CYANN 0xE536F3
 
 const char message[] = "card detail";
 int charge_length = 50, is_charging;
 
-void inputs(char message[], int number, int strength = 0);
+void inputs(char *message, int number, int strength = 0);
 void wifi(int x, int y, int number);
 void batteryDraw(int percentage, bool charge, int charging_percent);
 void modee();
@@ -45,6 +48,8 @@ const int resolution = 8;
 long int last_millis;
 
 BluetoothSerial SerialBT;
+
+TFT_eSPI tft = TFT_eSPI();
 
 /*
 Buz : D32
@@ -77,6 +82,24 @@ void setup()
 
   // attach the channel to the GPIO to be controlled
   ledcAttachPin(buzPin, ledChannel);
+
+  /* TFT */
+
+  tft.init();
+  tft.begin();
+  tft.setRotation(2);
+
+  Serial.println(F("OK!"));
+
+  // tft.setRotation();
+  tft.fillScreen(WHITE);
+  tft.setCursor(30, 120);
+  tft.setTextSize(10);
+  tft.setTextColor(LIGHT_BLUE);
+  tft.print("SGL");
+  delay(3000);
+  tft.fillScreen(BLACK);
+  modee();
 }
 
 void loop()
@@ -135,12 +158,11 @@ void loop()
               Serial.printf("\nRSSI of card %d is %d", i, rssi[i - 1]);
               SerialBT.print(rssi[i - 1]);
               SerialBT.print(" ");
-
-              intensity = map(rssi[i - 1], 30, 70, 1, 5);
-              if (num_cards == 1)
-              {
-                change_delay(intensity);
-              }
+            }
+            if (num_cards >= 1)
+            {
+              intensity = map(rssi[0], 30, 70, 1, 5);
+              change_delay(intensity);
             }
           }
 
@@ -173,16 +195,15 @@ void loop()
         }
       }
     }
-    // do the task that is related to variable;
   }
-
   if ((millis() - last_millis) > delay_buz)
   {
     last_millis = millis();
     ledcWrite(ledChannel, map(analogRead(potPin), 0, 4095, 0, 255));
   }
-  else
+  else if ((millis() - last_millis) > delay_buz)
   {
+    last_millis = millis();
     ledcWrite(ledChannel, 0);
   }
   delay(1000);
@@ -244,10 +265,10 @@ int calculate_distance(int rssi)
   return 0;
 }
 
-void inputs(char message[], int number, int strength = 0) // number = number of box we want to print at screen , strength = signal strength of wifi
+void inputs(char *message, int number, int strength) // number = number of box we want to print at screen , strength = signal strength of wifi
 {
   tft.fillRect(5, 90 + number * 30, 220, 25, BLACK);
-  tft.drawRect(5, 90 + number * 30, 220, 25, LIGHT_PINK); // to print UID string rect 1
+  tft.drawRect(5, 90 + number * 30, 220, 25, PINK); // to print UID string rect 1
   tft.setCursor(10, 95 + number * 30);
   tft.setTextColor(CYAN);
   tft.setTextSize(2.5);
@@ -341,7 +362,7 @@ void batteryDraw(int percentage, bool charge, int charging_percent)
 void modee()
 {
   tft.setCursor(0, 10); // to write title "mode"
-  tft.setTextColor(LIGHT_PINK);
+  tft.setTextColor(WHITE);
   tft.setTextSize(2.8);
   tft.print("MODE");
   tft.drawRect(4, 34, 225, 40, MAGENTA);
