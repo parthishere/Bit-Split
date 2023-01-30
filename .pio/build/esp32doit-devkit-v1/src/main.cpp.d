@@ -227,4 +227,5 @@
  .pio/libdeps/esp32doit-devkit-v1/TFT_eSPI/Fonts/Custom/Yellowtail_32.h \
  .pio/libdeps/esp32doit-devkit-v1/TFT_eSPI/Extensions/Smooth_font.h \
  .pio/libdeps/esp32doit-devkit-v1/TFT_eSPI/Extensions/Button.h \
- .pio/libdeps/esp32doit-devkit-v1/TFT_eSPI/Extensions/Sprite.h
+ .pio/libdeps/esp32doit-devkit-v1/TFT_eSPI/Extensions/Sprite.h \
+ /home/parthishere/.platformio/packages/framework-arduinoespressif32/libraries/Ticker/src/Ticker.h

@@ -5,6 +5,8 @@
 #include <TFT_eSPI.h> // Hardware-specific library
 #include <SPI.h>
 
+#include <Ticker.h>
+
 // #define DEBUG 1
 
 // #if DEBUG == 1
@@ -55,11 +57,13 @@ const int freq = 5000;
 const int ledChannel = 0;
 const int resolution = 8;
 bool on;
-long int last_millis;
+long int last_millis_to_on, last_millis_to_off;
 
 BluetoothSerial SerialBT;
 
 TFT_eSPI tft = TFT_eSPI();
+Ticker periodicTicker;
+Ticker onceTicker;
 
 /*
 Buz : D32
@@ -71,6 +75,18 @@ D25 : B3
 D33 : B4
 pot : D4
 */
+void periodicClear()
+{
+  Serial.flush();
+  tft.fillScreen(BLACK);
+  modee();
+  tft.setCursor(90, 4);
+  tft.setTextSize(3);
+  tft.setTextColor(CYANN);
+  tft.print("SGL");
+
+  ledcWrite(ledChannel, 0);
+}
 
 void setup()
 {
@@ -112,6 +128,8 @@ void setup()
   tft.setTextSize(3);
   tft.setTextColor(CYANN);
   tft.print("SGL");
+
+  ledcWrite(ledChannel, 0);
 }
 
 void loop()
@@ -152,7 +170,7 @@ void loop()
           }
 
           int num_cards = tdata[4];
-          Serial.printf("\nnum of cards: %d", num_cards);
+          // Serial.printf("\nnum of cards: %d", num_cards);
           SerialBT.print("NUM ");
           SerialBT.print(static_cast<int>(num_cards));
           // RSSI
@@ -167,7 +185,7 @@ void loop()
             if (index < (count_t - 1))
             {
               rssi[i - 1] = tdata[index];
-              Serial.printf("\nRSSI of card %d is %d", i, rssi[i - 1]);
+              // Serial.printf("\nRSSI of card %d is %d", i, rssi[i - 1]);
               SerialBT.print(rssi[i - 1]);
               SerialBT.print(" ");
             }
@@ -180,7 +198,7 @@ void loop()
 
           // EPC
           byte epc[num_cards][12];
-          Serial.printf("\nData of Cards:");
+          // Serial.printf("\nData of Cards:");
           SerialBT.print(" DATA ");
           for (int i = 0; i < num_cards; i++)
           {
@@ -190,7 +208,7 @@ void loop()
               if (index < (count_t - 1))
               {
                 epc[i][j] = tdata[index];
-                Serial.printf("%02X ", epc[i][j]);
+                // Serial.printf("%02X ", epc[i][j]);
                 SerialBT.print(epc[i][j]);
               }
             }
@@ -199,10 +217,11 @@ void loop()
             char *buf_temp = buf;
             inputs(buf_temp, i, intensity);
             SerialBT.print(" ");
-            Serial.printf("\n");
+            // Serial.printf("\n");
           }
           SerialBT.println("\n");
-          Serial.printf("\n");
+          // Serial.printf("\n");
+
           break;
         }
         catch (...)
@@ -212,30 +231,31 @@ void loop()
       }
     }
   }
-  // if (Serial.available() == 0)
-  // {
-  //   change_delay()
-  // }
-  if (((millis() - last_millis) > delay_buz) && on == true)
+
+  if (((millis() - last_millis_to_off) > delay_buz) && on == true)
   {
     on = false;
     Serial.println("THis wont noise");
     Serial.println(delay_buz);
-    last_millis = millis();
-
+    last_millis_to_off = millis();
+    Serial.print(analogRead(potPin));
     ledcWrite(ledChannel, 0);
   }
-  else if (((millis() - last_millis) > delay_buz) && on == false)
+  else if (((millis() - last_millis_to_off) > delay_buz) && on == false)
   {
     Serial.println("THis will noise");
     Serial.println(delay_buz);
-    last_millis = millis();
+    last_millis_to_off = millis();
     on = true;
-    ledcWrite(ledChannel, map(analogRead(potPin), 0, 4095, 0, 255));
+    Serial.print(analogRead(potPin));
+    ledcWrite(ledChannel, map(map(analogRead(potPin), 0, 4095, 0, 255), 0, 255, 0, 50));
   }
 
-  change_delay(0);
-  Serial.flush();
+  if ((millis() - last_millis_to_on > 5000))
+  {
+    periodicClear();
+    last_millis_to_on = millis();
+  }
 }
 
 void change_delay(int intensity)
@@ -248,11 +268,11 @@ void change_delay(int intensity)
     break;
 
   case 1:
-    delay_buz = 800;
+    delay_buz = 2000;
     break;
 
   case 2:
-    delay_buz = 600;
+    delay_buz = 800;
     break;
 
   case 3:
@@ -260,7 +280,7 @@ void change_delay(int intensity)
     break;
 
   case 4:
-    delay_buz = 100;
+    delay_buz = 50;
     break;
 
   default:
@@ -283,8 +303,6 @@ void inputs(char message[], int number, int strength) // number = number of box 
   tft.setTextSize(2);
   tft.print(message);
 
-  Serial.println("Strrngth");
-  Serial.println(strength);
   switch (strength)
   {
   case 1: // to create 1 bar of wifi signal
