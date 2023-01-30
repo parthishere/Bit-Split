@@ -5,6 +5,16 @@
 #include <TFT_eSPI.h> // Hardware-specific library
 #include <SPI.h>
 
+// #define DEBUG 1
+
+// #if DEBUG == 1
+// #define debug(x) Serial.print(x)
+// #define debugln(x) Serial.println(x)
+// #else
+// #define debug(x)
+// #define debugln(x)
+// #endif
+
 int buzPin = 32, potPin = 34, b1pin = 27, b2pin = 26, b3pin = 25, b4pin = 33;
 
 #define LCD_CS A3 // Chip Select goes to Analog 3
@@ -44,7 +54,7 @@ int delay_buz = 20000, intensity;
 const int freq = 5000;
 const int ledChannel = 0;
 const int resolution = 8;
-
+bool on;
 long int last_millis;
 
 BluetoothSerial SerialBT;
@@ -163,7 +173,7 @@ void loop()
             }
             if (num_cards >= 1)
             {
-              intensity = map(rssi[0], 30, 70, 0, 4);
+              intensity = map(rssi[0], 30, 70, 4, 0);
               change_delay(intensity);
             }
           }
@@ -185,7 +195,7 @@ void loop()
               }
             }
             char buf[100];
-            sprintf(buf, "%02X%02X%02X%02X%02X%02X%02X%02X", epc[i][0], epc[i][1], epc[i][2], epc[i][3], epc[i][4], epc[i][5], epc[i][6], epc[i][7]);
+            sprintf(buf, "%02X%02X%02X%02X%02X%02X%02X", epc[i][1], epc[i][2], epc[i][3], epc[i][4], epc[i][5], epc[i][6], epc[i][7]);
             char *buf_temp = buf;
             inputs(buf_temp, i, intensity);
             SerialBT.print(" ");
@@ -202,22 +212,29 @@ void loop()
       }
     }
   }
-
-  if ((millis() - last_millis) > delay_buz)
+  // if (Serial.available() == 0)
+  // {
+  //   change_delay()
+  // }
+  if (((millis() - last_millis) > delay_buz) && on == true)
   {
-    Serial.println("THis will noise");
-    Serial.println(delay_buz);
-    last_millis = millis();
-    ledcWrite(ledChannel, map(analogRead(potPin), 0, 4095, 0, 255));
-  }
-  else if ((millis() - last_millis) > delay_buz)
-  {
+    on = false;
     Serial.println("THis wont noise");
     Serial.println(delay_buz);
     last_millis = millis();
 
     ledcWrite(ledChannel, 0);
   }
+  else if (((millis() - last_millis) > delay_buz) && on == false)
+  {
+    Serial.println("THis will noise");
+    Serial.println(delay_buz);
+    last_millis = millis();
+    on = true;
+    ledcWrite(ledChannel, map(analogRead(potPin), 0, 4095, 0, 255));
+  }
+
+  change_delay(0);
   Serial.flush();
 }
 
@@ -225,9 +242,6 @@ void change_delay(int intensity)
 {
   switch (intensity)
   {
-  case -1:
-    delay_buz = 10;
-    break;
 
   case 0:
     delay_buz = 20000;
@@ -266,7 +280,7 @@ void inputs(char message[], int number, int strength) // number = number of box 
   tft.drawRect(5, 90 + number * 30, 220, 25, LIGHT_PINK); // to print UID string rect 1
   tft.setCursor(10, 95 + number * 30);
   tft.setTextColor(CYAN);
-  tft.setTextSize(2.5);
+  tft.setTextSize(2);
   tft.print(message);
 
   Serial.println("Strrngth");
