@@ -5,7 +5,7 @@
 #include <TFT_eSPI.h> // Hardware-specific library
 #include <SPI.h>
 
-int buzPin = 32, potPin = 4, b1pin = 27, b2pin = 26, b3pin = 25, b4pin = 33;
+int buzPin = 32, potPin = 34, b1pin = 27, b2pin = 26, b3pin = 25, b4pin = 33;
 
 #define LCD_CS A3 // Chip Select goes to Analog 3
 #define LCD_CD A2 // Command/Data goes to Analog 2
@@ -29,7 +29,7 @@ int buzPin = 32, potPin = 4, b1pin = 27, b2pin = 26, b3pin = 25, b4pin = 33;
 const char message[] = "card detail";
 int charge_length = 50, is_charging;
 
-void inputs(char *message, int number, int strength = 0);
+void inputs(char *message, int number, int strength);
 void wifi(int x, int y, int number);
 void batteryDraw(int percentage, bool charge, int charging_percent);
 void modee();
@@ -40,7 +40,7 @@ void change_delay(int intensity);
 int count = 0, count_t = 0, totalpackets = 0;
 byte tdata[200];
 bool initial = true;
-int delay_buz, intensity;
+int delay_buz = 20000, intensity;
 const int freq = 5000;
 const int ledChannel = 0;
 const int resolution = 8;
@@ -86,11 +86,8 @@ void setup()
   /* TFT */
 
   tft.init();
+  // uint16_t identifier = tft.readID();
   tft.begin();
-  tft.setRotation(2);
-
-  Serial.println(F("OK!"));
-
   // tft.setRotation();
   tft.fillScreen(WHITE);
   tft.setCursor(30, 120);
@@ -100,6 +97,11 @@ void setup()
   delay(3000);
   tft.fillScreen(BLACK);
   modee();
+
+  tft.setCursor(90, 4);
+  tft.setTextSize(3);
+  tft.setTextColor(CYANN);
+  tft.print("SGL");
 }
 
 void loop()
@@ -161,7 +163,7 @@ void loop()
             }
             if (num_cards >= 1)
             {
-              intensity = map(rssi[0], 30, 70, 1, 5);
+              intensity = map(rssi[0], 30, 70, 0, 4);
               change_delay(intensity);
             }
           }
@@ -182,6 +184,10 @@ void loop()
                 SerialBT.print(epc[i][j]);
               }
             }
+            char buf[100];
+            sprintf(buf, "%02X%02X%02X%02X%02X%02X%02X%02X", epc[i][0], epc[i][1], epc[i][2], epc[i][3], epc[i][4], epc[i][5], epc[i][6], epc[i][7]);
+            char *buf_temp = buf;
+            inputs(buf_temp, i, intensity);
             SerialBT.print(" ");
             Serial.printf("\n");
           }
@@ -196,17 +202,23 @@ void loop()
       }
     }
   }
+
   if ((millis() - last_millis) > delay_buz)
   {
+    Serial.println("THis will noise");
+    Serial.println(delay_buz);
     last_millis = millis();
     ledcWrite(ledChannel, map(analogRead(potPin), 0, 4095, 0, 255));
   }
   else if ((millis() - last_millis) > delay_buz)
   {
+    Serial.println("THis wont noise");
+    Serial.println(delay_buz);
     last_millis = millis();
+
     ledcWrite(ledChannel, 0);
   }
-  delay(1000);
+  Serial.flush();
 }
 
 void change_delay(int intensity)
@@ -217,44 +229,28 @@ void change_delay(int intensity)
     delay_buz = 10;
     break;
 
+  case 0:
+    delay_buz = 20000;
+    break;
+
   case 1:
-    delay_buz = 100;
-    break;
-
-  case 2:
-    delay_buz = 400;
-    break;
-
-  case 3:
-    delay_buz = 600;
-    break;
-
-  case 4:
-    delay_buz = 700;
-    break;
-
-  case 5:
     delay_buz = 800;
     break;
 
-  case 6:
-    delay_buz = 900;
+  case 2:
+    delay_buz = 600;
     break;
 
-  case 7:
-    delay_buz = 1000;
+  case 3:
+    delay_buz = 200;
     break;
 
-  case 8:
-    delay_buz = 1200;
+  case 4:
+    delay_buz = 100;
     break;
 
-  case 9:
-    delay_buz = 1500;
-    break;
-
-  case 10:
-    delay_buz = 2000;
+  default:
+    delay_buz = 20000;
     break;
   }
 }
@@ -264,11 +260,10 @@ int calculate_distance(int rssi)
 
   return 0;
 }
-
-void inputs(char *message, int number, int strength) // number = number of box we want to print at screen , strength = signal strength of wifi
+void inputs(char message[], int number, int strength) // number = number of box we want to print at screen , strength = signal strength of wifi
 {
   tft.fillRect(5, 90 + number * 30, 220, 25, BLACK);
-  tft.drawRect(5, 90 + number * 30, 220, 25, PINK); // to print UID string rect 1
+  tft.drawRect(5, 90 + number * 30, 220, 25, LIGHT_PINK); // to print UID string rect 1
   tft.setCursor(10, 95 + number * 30);
   tft.setTextColor(CYAN);
   tft.setTextSize(2.5);
@@ -304,7 +299,6 @@ void inputs(char *message, int number, int strength) // number = number of box w
 
 void wifi(int x, int y, int number)
 {
-
   tft.drawRect(180 + 10 * x, 104 - 4 * y + number * 30, 8, 8 + 4 * x, BLACK);
   tft.fillRect(180 + 10 * x, 104 - 4 * y + number * 30, 8, 8 + 4 * x, BLACK);
 
@@ -362,7 +356,7 @@ void batteryDraw(int percentage, bool charge, int charging_percent)
 void modee()
 {
   tft.setCursor(0, 10); // to write title "mode"
-  tft.setTextColor(WHITE);
+  tft.setTextColor(LIGHT_PINK);
   tft.setTextSize(2.8);
   tft.print("MODE");
   tft.drawRect(4, 34, 225, 40, MAGENTA);
