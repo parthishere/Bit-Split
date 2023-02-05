@@ -59,11 +59,18 @@ const int resolution = 8;
 bool on;
 long int last_millis_to_on, last_millis_to_off;
 
+int upper_range{30}, lower_range{70};
+long int last_millis_for_printing;
 BluetoothSerial SerialBT;
 
 TFT_eSPI tft = TFT_eSPI();
 Ticker periodicTicker;
 Ticker onceTicker;
+
+bool b1_pin_as_mode = false;
+bool b2_pin_as_mode = false;
+bool b3_pin_as_mode = false;
+bool b4_pin_as_mode = false;
 
 /*
 Buz : D32
@@ -75,6 +82,7 @@ D25 : B3
 D33 : B4
 pot : D4
 */
+int mode = 1;
 void periodicClear()
 {
   Serial.flush();
@@ -90,15 +98,16 @@ void periodicClear()
 
 void setup()
 {
-  // put your setup code here, to run once:
 
   Serial.begin(115200);
   Serial2.begin(115200);
   delay(1000);
   SerialBT.begin();
   Serial.println("Bluetooth Started! Ready to pair...");
+
   pinMode(buzPin, OUTPUT);
   pinMode(potPin, INPUT);
+
   pinMode(b1pin, INPUT_PULLUP);
   pinMode(b2pin, INPUT_PULLUP);
   pinMode(b3pin, INPUT_PULLUP);
@@ -130,10 +139,44 @@ void setup()
   tft.print("SGL");
 
   ledcWrite(ledChannel, 0);
+  last_millis_for_printing = millis();
 }
 
 void loop()
 {
+  if(digitalRead(b1pin) == 0){
+    b1_pin_as_mode = true;
+    b2_pin_as_mode = false;
+    b2_pin_as_mode = false;
+    b2_pin_as_mode = false;
+    mode = 1;
+    periodicClear();
+    modee();
+  }else if(digitalRead(b2pin) == 0){
+    b1_pin_as_mode = false;
+    b2_pin_as_mode = true;
+    b2_pin_as_mode = false;
+    b2_pin_as_mode = false;
+    mode = 2;
+    periodicClear();
+    modee();
+  }else if(digitalRead(b3pin) == 0){
+    b1_pin_as_mode = false;
+    b2_pin_as_mode = false;
+    b2_pin_as_mode = true;
+    b2_pin_as_mode = false;
+    periodicClear();
+    mode = 3;
+    modee();
+  }else if(digitalRead(b4pin) == 0){
+    b1_pin_as_mode = false;
+    b2_pin_as_mode = false;
+    b2_pin_as_mode = false;
+    b2_pin_as_mode = true;
+    periodicClear();
+    mode = 4;
+  }
+
 
   while (Serial2.available() > 0)
   {
@@ -174,6 +217,22 @@ void loop()
           SerialBT.print("NUM ");
           SerialBT.print(static_cast<int>(num_cards));
           // RSSI
+          if (b1_pin_as_mode){
+            upper_range = 30;
+            lower_range = 70;
+          }
+          else if(b2_pin_as_mode){
+            upper_range = 40;
+            lower_range = 70;
+          }
+          else if(b3_pin_as_mode){
+            upper_range = 50;
+            lower_range = 70;
+          }
+          else if(b4_pin_as_mode){
+            upper_range = 60;
+            lower_range = 70;
+          }
 
           byte rssi[num_cards];
           int rssi_int[num_cards];
@@ -189,16 +248,17 @@ void loop()
               SerialBT.print(rssi[i - 1]);
               SerialBT.print(" ");
             }
+
             if (num_cards >= 1)
             {
-              intensity = map(rssi[0], 30, 70, 4, 0);
+              intensity = map(rssi[0], upper_range,  lower_range, 4, 0);
               change_delay(intensity);
             }
           }
 
           // EPC
           byte epc[num_cards][12];
-          // Serial.printf("\nData of Cards:");
+          Serial.printf("\nData of Cards:");
           SerialBT.print(" DATA ");
           for (int i = 0; i < num_cards; i++)
           {
@@ -208,20 +268,27 @@ void loop()
               if (index < (count_t - 1))
               {
                 epc[i][j] = tdata[index];
-                // Serial.printf("%02X ", epc[i][j]);
+                Serial.printf("%02X ", epc[i][j]);
                 SerialBT.print(epc[i][j]);
               }
             }
-            char buf[100];
-            sprintf(buf, "%02X%02X%02X%02X%02X%02X%02X", epc[i][1], epc[i][2], epc[i][3], epc[i][4], epc[i][5], epc[i][6], epc[i][7]);
-            char *buf_temp = buf;
-            inputs(buf_temp, i, intensity);
-            SerialBT.print(" ");
+            
+             char buf[100];
+              sprintf(buf, "%02X%02X%02X%02X%02X%02X%02X", epc[i][1], epc[i][2], epc[i][3], epc[i][4], epc[i][5], epc[i][6], epc[i][7]);
+              char *buf_temp = buf;
+              inputs(buf_temp, i, map(rssi[i], upper_range,  lower_range, 4, 0));
+              SerialBT.print(" ");
+              last_millis_for_printing = millis();
+            
+            
             // Serial.printf("\n");
           }
           SerialBT.println("\n");
           // Serial.printf("\n");
-
+          // for (int i=0; i<num_cards; i++){
+              
+          // }
+           
           break;
         }
         catch (...)
@@ -392,4 +459,8 @@ void modee()
   tft.setTextSize(2.8);
   tft.print("MODE");
   tft.drawRect(4, 34, 225, 40, MAGENTA);
+  tft.setCursor(50, 10);
+  tft.setTextColor(WHITE);
+   tft.setTextSize(2.8);
+  tft.print(String(mode));
 }
