@@ -86,12 +86,7 @@ int mode = 1;
 void periodicClear()
 {
   Serial.flush();
-  tft.fillScreen(BLACK);
-  modee();
-  tft.setCursor(90, 4);
-  tft.setTextSize(3);
-  tft.setTextColor(CYANN);
-  tft.print("SGL");
+  tft.fillRect(5, 90, 235, 250, BLACK);
 
   ledcWrite(ledChannel, 0);
 }
@@ -144,7 +139,8 @@ void setup()
 
 void loop()
 {
-  if(digitalRead(b1pin) == 0){
+  if (digitalRead(b1pin) == 0)
+  {
     b1_pin_as_mode = true;
     b2_pin_as_mode = false;
     b2_pin_as_mode = false;
@@ -152,7 +148,9 @@ void loop()
     mode = 1;
     periodicClear();
     modee();
-  }else if(digitalRead(b2pin) == 0){
+  }
+  else if (digitalRead(b2pin) == 0)
+  {
     b1_pin_as_mode = false;
     b2_pin_as_mode = true;
     b2_pin_as_mode = false;
@@ -160,7 +158,9 @@ void loop()
     mode = 2;
     periodicClear();
     modee();
-  }else if(digitalRead(b3pin) == 0){
+  }
+  else if (digitalRead(b3pin) == 0)
+  {
     b1_pin_as_mode = false;
     b2_pin_as_mode = false;
     b2_pin_as_mode = true;
@@ -168,7 +168,9 @@ void loop()
     periodicClear();
     mode = 3;
     modee();
-  }else if(digitalRead(b4pin) == 0){
+  }
+  else if (digitalRead(b4pin) == 0)
+  {
     b1_pin_as_mode = false;
     b2_pin_as_mode = false;
     b2_pin_as_mode = false;
@@ -176,7 +178,6 @@ void loop()
     periodicClear();
     mode = 4;
   }
-
 
   while (Serial2.available() > 0)
   {
@@ -217,19 +218,23 @@ void loop()
           SerialBT.print("NUM ");
           SerialBT.print(static_cast<int>(num_cards));
           // RSSI
-          if (b1_pin_as_mode){
+          if (b1_pin_as_mode)
+          {
             upper_range = 30;
             lower_range = 70;
           }
-          else if(b2_pin_as_mode){
+          else if (b2_pin_as_mode)
+          {
             upper_range = 40;
             lower_range = 70;
           }
-          else if(b3_pin_as_mode){
+          else if (b3_pin_as_mode)
+          {
             upper_range = 50;
             lower_range = 70;
           }
-          else if(b4_pin_as_mode){
+          else if (b4_pin_as_mode)
+          {
             upper_range = 60;
             lower_range = 70;
           }
@@ -248,17 +253,11 @@ void loop()
               SerialBT.print(rssi[i - 1]);
               SerialBT.print(" ");
             }
-
-            if (num_cards >= 1)
-            {
-              intensity = map(rssi[0], upper_range,  lower_range, 4, 0);
-              change_delay(intensity);
-            }
           }
 
           // EPC
           byte epc[num_cards][12];
-          Serial.printf("\nData of Cards:");
+          // Serial.printf("\nData of Cards:");
           SerialBT.print(" DATA ");
           for (int i = 0; i < num_cards; i++)
           {
@@ -268,27 +267,33 @@ void loop()
               if (index < (count_t - 1))
               {
                 epc[i][j] = tdata[index];
-                Serial.printf("%02X ", epc[i][j]);
+                // Serial.printf("%02X ", epc[i][j]);
                 SerialBT.print(epc[i][j]);
               }
             }
-            
-             char buf[100];
-              sprintf(buf, "%02X%02X%02X%02X%02X%02X%02X", epc[i][1], epc[i][2], epc[i][3], epc[i][4], epc[i][5], epc[i][6], epc[i][7]);
-              char *buf_temp = buf;
-              inputs(buf_temp, i, map(rssi[i], upper_range,  lower_range, 4, 0));
-              SerialBT.print(" ");
-              last_millis_for_printing = millis();
-            
-            
             // Serial.printf("\n");
           }
           SerialBT.println("\n");
           // Serial.printf("\n");
-          // for (int i=0; i<num_cards; i++){
-              
-          // }
-           
+
+          if ((millis() - last_millis_for_printing) > 400)
+          {
+            for (int i = 0; i < num_cards; i++)
+            {
+              char buf[100];
+              sprintf(buf, "%02X%02X%02X%02X%02X%02X%02X", epc[i][5], epc[i][6], epc[i][7], epc[i][8], epc[i][9], epc[i][10], epc[i][11], epc[i][12]);
+              char *buf_temp = buf;
+              inputs(buf_temp, i, map(rssi[i], upper_range, lower_range, 4, 0));
+              SerialBT.print(" ");
+              last_millis_for_printing = millis();
+              if (i == 1)
+              {
+                intensity = map(rssi[0], upper_range, lower_range, 4, 0);
+                change_delay(intensity);
+              }
+            }
+          }
+
           break;
         }
         catch (...)
@@ -302,19 +307,13 @@ void loop()
   if (((millis() - last_millis_to_off) > delay_buz) && on == true)
   {
     on = false;
-    Serial.println("THis wont noise");
-    Serial.println(delay_buz);
     last_millis_to_off = millis();
-    Serial.print(analogRead(potPin));
     ledcWrite(ledChannel, 0);
   }
   else if (((millis() - last_millis_to_off) > delay_buz) && on == false)
   {
-    Serial.println("THis will noise");
-    Serial.println(delay_buz);
     last_millis_to_off = millis();
     on = true;
-    Serial.print(analogRead(potPin));
     ledcWrite(ledChannel, map(map(analogRead(potPin), 0, 4095, 0, 255), 0, 255, 0, 50));
   }
 
@@ -323,6 +322,44 @@ void loop()
     periodicClear();
     last_millis_to_on = millis();
   }
+}
+
+void beep(int intensity)
+{
+
+  Serial.println(delay_buz);
+  switch (intensity)
+  {
+
+  case 0:
+    delay_buz = 20000;
+    break;
+
+  case 1:
+    delay_buz = 2000;
+    break;
+
+  case 2:
+    delay_buz = 800;
+    break;
+
+  case 3:
+    delay_buz = 200;
+    break;
+
+  case 4:
+    delay_buz = 50;
+    break;
+
+  default:
+    delay_buz = 20000;
+    break;
+  }
+  Serial.println(delay_buz);
+  ledcWrite(ledChannel, map(map(analogRead(potPin), 0, 4095, 0, 255), 0, 255, 0, 50));
+  delay(delay_buz);
+  ledcWrite(ledChannel, 0);
+  delay(delay_buz);
 }
 
 void change_delay(int intensity)
@@ -461,6 +498,6 @@ void modee()
   tft.drawRect(4, 34, 225, 40, MAGENTA);
   tft.setCursor(50, 10);
   tft.setTextColor(WHITE);
-   tft.setTextSize(2.8);
+  tft.setTextSize(2.8);
   tft.print(String(mode));
 }
