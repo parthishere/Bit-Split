@@ -6,6 +6,7 @@
 #include <SPI.h>
 
 #include <Ticker.h>
+#include <list>
 
 // #define DEBUG 1
 
@@ -85,10 +86,75 @@ pot : D4
 int mode = 1;
 void periodicClear()
 {
-  Serial.flush();
+
   tft.fillRect(5, 90, 235, 250, BLACK);
 
   ledcWrite(ledChannel, 0);
+}
+
+void swap(int a, int b)
+{
+  int t = a;
+  a = b;
+  b = t;
+}
+
+int partition(int arr[], int start, int end)
+{
+
+  int pivot = arr[start];
+
+  int count = 0;
+  for (int i = start + 1; i <= end; i++)
+  {
+    if (arr[i] <= pivot)
+      count++;
+  }
+
+  // Giving pivot element its correct position
+  int pivotIndex = start + count;
+  swap(arr[pivotIndex], arr[start]);
+
+  // Sorting left and right parts of the pivot element
+  int i = start, j = end;
+
+  while (i < pivotIndex && j > pivotIndex)
+  {
+
+    while (arr[i] <= pivot)
+    {
+      i++;
+    }
+
+    while (arr[j] > pivot)
+    {
+      j--;
+    }
+
+    if (i < pivotIndex && j > pivotIndex)
+    {
+      swap(arr[i++], arr[j--]);
+    }
+  }
+
+  return pivotIndex;
+}
+
+void quickSort(int arr[], int start, int end)
+{
+
+  // base case
+  if (start >= end)
+    return;
+
+  // partitioning the array
+  int p = partition(arr, start, end);
+
+  // Sorting the left part
+  quickSort(arr, start, p - 1);
+
+  // Sorting the right part
+  quickSort(arr, p + 1, end);
 }
 
 void setup()
@@ -241,6 +307,7 @@ void loop()
 
           byte rssi[num_cards];
           int rssi_int[num_cards];
+
           SerialBT.print(" ");
           SerialBT.print(" RSSI ");
           for (int i = 1; i <= num_cards; i++)
@@ -249,6 +316,7 @@ void loop()
             if (index < (count_t - 1))
             {
               rssi[i - 1] = tdata[index];
+              memcpy(&rssi_int[i - 1], (char *)tdata[index], sizeof(int));
               // Serial.printf("\nRSSI of card %d is %d", i, rssi[i - 1]);
               SerialBT.print(rssi[i - 1]);
               SerialBT.print(" ");
@@ -275,16 +343,24 @@ void loop()
           }
           SerialBT.println("\n");
           // Serial.printf("\n");
+          // quickSort(rssi_int, 0, num_cards - 1);
+          Serial.println("Sorted");
+          for (int i = 0; i < num_cards; i++)
+          {
+            Serial.print(rssi_int[i]);
+          }
 
           if ((millis() - last_millis_for_printing) > 400)
           {
+
             for (int i = 0; i < num_cards; i++)
             {
+
               char buf[100];
               sprintf(buf, "%02X%02X%02X%02X%02X%02X%02X", epc[i][5], epc[i][6], epc[i][7], epc[i][8], epc[i][9], epc[i][10], epc[i][11], epc[i][12]);
               char *buf_temp = buf;
+              tft.fillRect(5, 90 + i * 30, 220, 25, BLACK);
               inputs(buf_temp, i, map(rssi[i], upper_range, lower_range, 4, 0));
-              SerialBT.print(" ");
               last_millis_for_printing = millis();
               if (i == 1)
               {
@@ -322,6 +398,7 @@ void loop()
     periodicClear();
     last_millis_to_on = millis();
   }
+  Serial.flush();
 }
 
 void beep(int intensity)
