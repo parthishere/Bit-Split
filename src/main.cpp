@@ -364,6 +364,14 @@ void loop()
               sprintf(buf, "%02X%02X%02X%02X%02X%02X%02X", epc[i][5], epc[i][6], epc[i][7], epc[i][8], epc[i][9], epc[i][10], epc[i][11], epc[i][12]);
               char *buf_temp = buf;
               tft.fillRect(5, 90 + i * 30, 220, 25, BLACK);
+              Serial.print("Upper range");
+              Serial.print(" ");
+              Serial.print(upper_range);
+              Serial.print(" ");
+              Serial.print("Lower range");
+              Serial.print(" ");
+              Serial.println(lower_range);
+
               inputs(buf_temp, i, map(rssi_int[i], upper_range, lower_range, 4, 0));
               last_millis_for_printing = millis();
               if (i == 1)
