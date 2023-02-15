@@ -92,69 +92,131 @@ void periodicClear()
   ledcWrite(ledChannel, 0);
 }
 
-void swap(int a, int b)
-{
-  int t = a;
-  a = b;
-  b = t;
+void swap(int *a, int *b, int *c, int *d) {
+  int t = *a;
+  *a = *b;
+  *b = t;
+  t = *c;
+  *c = *d;
+  *d = t;
 }
 
-int partition(int arr[], int start, int end)
-{
+int partition(int array1[], int array2[], int low, int high) {
+    
+  // select the rightmost element of array1 as pivot
+  int pivot = array1[high];
+  
+  // pointer for greater element
+  int i = (low - 1);
 
-  int pivot = arr[start];
-
-  int count = 0;
-  for (int i = start + 1; i <= end; i++)
-  {
-    if (arr[i] <= pivot)
-      count++;
-  }
-
-  // Giving pivot element its correct position
-  int pivotIndex = start + count;
-  swap(arr[pivotIndex], arr[start]);
-
-  // Sorting left and right parts of the pivot element
-  int i = start, j = end;
-
-  while (i < pivotIndex && j > pivotIndex)
-  {
-
-    while (arr[i] <= pivot)
-    {
+  // traverse each element of the arrays
+  // compare the elements of array1 with the pivot
+  for (int j = low; j < high; j++) {
+    if (array1[j] <= pivot) {
+        
+      // if element smaller than pivot is found
+      // swap it with the greater element pointed by i
       i++;
+      
+      // swap elements at i with elements at j
+      swap(&array1[i], &array1[j], &array2[i], &array2[j]);
     }
+  }
+  
+  // swap pivot with the greater element at i
+  swap(&array1[i + 1], &array1[high], &array2[i + 1], &array2[high]);
+  
+  // return the partition point
+  return (i + 1);
+}
 
-    while (arr[j] > pivot)
-    {
-      j--;
-    }
+void quickSort(int array1[], int array2[], int low, int high) {
+  if (low < high) {
+      
+    // find the pivot element such that
+    // elements smaller than pivot are on left of pivot
+    // elements greater than pivot are on right of pivot
+    int pi = partition(array1, array2, low, high);
 
-    if (i < pivotIndex && j > pivotIndex)
+    // recursive call on the left of pivot
+    quickSort(array1, array2, low, pi - 1);
+
+    // recursive call on the right of pivot
+    quickSort(array1, array2, pi + 1, high);
+  }
+}
+
+
+
+
+
+
+
+void swap(byte *a, byte *b)
+{
+  byte t = *a;
+  *a = *b;
+  *b = t;
+}
+
+void printArray(int array[], int size)
+{
+  int i;
+  for (i = 0; i < size; i++)
+    Serial.print(array[i]);
+  Serial.println();
+}
+
+int partition(int array[], int low, int high, byte epc[])
+{
+
+  // select the rightmost element as pivot
+  int pivot = array[high];
+  int pivot_card = epc[high];
+
+  // pointer for greater element
+  int i = (low - 1);
+
+  // traverse each element of the array
+  // compare them with the pivot
+  for (int j = low; j < high; j++)
+  {
+    if (array[j] <= pivot)
     {
-      swap(arr[i++], arr[j--]);
+
+      // if element smaller than pivot is found
+      // swap it with the greater element pointed by i
+      i++;
+
+      // swap element at i with element at j
+      swap(&array[i], &array[j]);
+      swap(&epc[i], &epc[j]);
     }
   }
 
-  return pivotIndex;
+  // swap pivot with the greater element at i
+  swap(&array[i + 1], &array[high]);
+  swap(&epc[i + 1], &epc[high]);
+  // return the partition point
+  return (i + 1);
 }
 
-void quickSort(int arr[], int start, int end)
+void quickSort(int array[], int low, int high, byte epc[])
 {
+  if (low < high)
+  {
 
-  // base case
-  if (start >= end)
-    return;
+    // find the pivot element such that
+    // elements smaller than pivot are on left of pivot
+    // elements greater than pivot are on righ of pivot
+    int pi = partition(array, low, high, epc);
 
-  // partitioning the array
-  int p = partition(arr, start, end);
+    // recursive call on the left of pivot
+    quickSort(array, low, pi - 1, epc);
 
-  // Sorting the left part
-  quickSort(arr, start, p - 1);
-
-  // Sorting the right part
-  quickSort(arr, p + 1, end);
+    // recursive call on the right of pivot
+    quickSort(array, pi + 1, high, epc);
+  }
 }
 
 void setup()
@@ -213,6 +275,7 @@ void loop()
     b2_pin_as_mode = false;
     mode = 1;
     periodicClear();
+    tft.fillRect(50, 10, 10, 12, BLACK);
     modee();
   }
   else if (digitalRead(b2pin) == 0)
@@ -223,6 +286,8 @@ void loop()
     b2_pin_as_mode = false;
     mode = 2;
     periodicClear();
+    tft.fillRect(50, 10, 10, 12, BLACK);
+
     modee();
   }
   else if (digitalRead(b3pin) == 0)
@@ -231,8 +296,11 @@ void loop()
     b2_pin_as_mode = false;
     b2_pin_as_mode = true;
     b2_pin_as_mode = false;
+    tft.fillRect(50, 10, 10, 10, BLACK);
     periodicClear();
     mode = 3;
+    tft.fillRect(50, 10, 10, 12, BLACK);
+
     modee();
   }
   else if (digitalRead(b4pin) == 0)
@@ -241,8 +309,10 @@ void loop()
     b2_pin_as_mode = false;
     b2_pin_as_mode = false;
     b2_pin_as_mode = true;
+    tft.fillRect(50, 10, 10, 12, BLACK);
     periodicClear();
     mode = 4;
+    modee();
   }
 
   while (Serial2.available() > 0)
@@ -316,7 +386,7 @@ void loop()
             if (index < (count_t - 1))
             {
               rssi[i - 1] = tdata[index];
-              memcpy(&rssi_int[i - 1], (char *)tdata[index], sizeof(int));
+              rssi_int[i - 1] = (int)tdata[index];
               // Serial.printf("\nRSSI of card %d is %d", i, rssi[i - 1]);
               SerialBT.print(rssi[i - 1]);
               SerialBT.print(" ");
@@ -343,11 +413,40 @@ void loop()
           }
           SerialBT.println("\n");
           // Serial.printf("\n");
-          // quickSort(rssi_int, 0, num_cards - 1);
+          Serial.println("Unsorted EPC");
+          for (int i = 0; i < num_cards; i++)
+          {
+
+            char buf[100];
+            sprintf(buf, "%02X%02X%02X%02X%02X%02X%02X", epc[i][5], epc[i][6], epc[i][7], epc[i][8], epc[i][9], epc[i][10], epc[i][11], epc[i][12]);
+            char *buf_temp = buf;
+            Serial.println(buf);
+          }
+
+          Serial.println("Unsorted");
+          for (int i = 0; i < num_cards; i++)
+          {
+            Serial.print(rssi_int[i]);
+            Serial.print(" ");
+          }
+          Serial.println();
+          quickSort(rssi_int, 0, num_cards - 1, epc[num_cards]);
           Serial.println("Sorted");
           for (int i = 0; i < num_cards; i++)
           {
             Serial.print(rssi_int[i]);
+            Serial.print(" ");
+          }
+          Serial.println();
+
+          Serial.println("Sorted EPC");
+          for (int i = 0; i < num_cards; i++)
+          {
+
+            char buf[100];
+            sprintf(buf, "%02X%02X%02X%02X%02X%02X%02X", epc[i][5], epc[i][6], epc[i][7], epc[i][8], epc[i][9], epc[i][10], epc[i][11], epc[i][12]);
+            char *buf_temp = buf;
+            Serial.println(buf);
           }
 
           if ((millis() - last_millis_for_printing) > 400)
@@ -399,44 +498,6 @@ void loop()
     last_millis_to_on = millis();
   }
   Serial.flush();
-}
-
-void beep(int intensity)
-{
-
-  Serial.println(delay_buz);
-  switch (intensity)
-  {
-
-  case 0:
-    delay_buz = 20000;
-    break;
-
-  case 1:
-    delay_buz = 2000;
-    break;
-
-  case 2:
-    delay_buz = 800;
-    break;
-
-  case 3:
-    delay_buz = 200;
-    break;
-
-  case 4:
-    delay_buz = 50;
-    break;
-
-  default:
-    delay_buz = 20000;
-    break;
-  }
-  Serial.println(delay_buz);
-  ledcWrite(ledChannel, map(map(analogRead(potPin), 0, 4095, 0, 255), 0, 255, 0, 50));
-  delay(delay_buz);
-  ledcWrite(ledChannel, 0);
-  delay(delay_buz);
 }
 
 void change_delay(int intensity)
