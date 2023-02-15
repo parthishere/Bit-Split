@@ -162,58 +162,6 @@ void printArray(int array[], int size)
   Serial.println();
 }
 
-// int partition(int array[], int low, int high, byte epc[])
-// {
-
-//   // select the rightmost element as pivot
-//   int pivot = array[high];
-//   int pivot_card = epc[high];
-
-//   // pointer for greater element
-//   int i = (low - 1);
-
-//   // traverse each element of the array
-//   // compare them with the pivot
-//   for (int j = low; j < high; j++)
-//   {
-//     if (array[j] <= pivot)
-//     {
-
-//       // if element smaller than pivot is found
-//       // swap it with the greater element pointed by i
-//       i++;
-
-//       // swap element at i with element at j
-//       swap(&array[i], &array[j]);
-//       swap(&epc[i], &epc[j]);
-//     }
-//   }
-
-//   // swap pivot with the greater element at i
-//   swap(&array[i + 1], &array[high]);
-//   swap(&epc[i + 1], &epc[high]);
-//   // return the partition point
-//   return (i + 1);
-// }
-
-// void quickSort(int array[], int low, int high, byte epc[])
-// {
-//   if (low < high)
-//   {
-
-//     // find the pivot element such that
-//     // elements smaller than pivot are on left of pivot
-//     // elements greater than pivot are on righ of pivot
-//     int pi = partition(array, low, high, epc);
-
-//     // recursive call on the left of pivot
-//     quickSort(array, low, pi - 1, epc);
-
-//     // recursive call on the right of pivot
-//     quickSort(array, pi + 1, high, epc);
-//   }
-// }
-
 void setup()
 {
 
@@ -408,41 +356,8 @@ void loop()
           }
           SerialBT.println("\n");
           // Serial.printf("\n");
-          Serial.println("Unsorted EPC");
-          for (int i = 0; i < num_cards; i++)
-          {
 
-            char buf[100];
-            sprintf(buf, "%02X%02X%02X%02X%02X%02X%02X", epc[i][5], epc[i][6], epc[i][7], epc[i][8], epc[i][9], epc[i][10], epc[i][11], epc[i][12]);
-            char *buf_temp = buf;
-            Serial.println(buf);
-          }
-
-          Serial.println("Unsorted");
-          for (int i = 0; i < num_cards; i++)
-          {
-            Serial.print(rssi_int[i]);
-            Serial.print(" ");
-          }
-          Serial.println();
           quickSort(rssi_int, epc, 0, num_cards - 1);
-          Serial.println("Sorted");
-          for (int i = 0; i < num_cards; i++)
-          {
-            Serial.print(rssi_int[i]);
-            Serial.print(" ");
-          }
-
-          Serial.println("Sorted EPC");
-          for (int i = 0; i < num_cards; i++)
-          {
-
-            char buf[100];
-            sprintf(buf, "%02X%02X%02X%02X%02X%02X%02X", epc[i][5], epc[i][6], epc[i][7], epc[i][8], epc[i][9], epc[i][10], epc[i][11], epc[i][12]);
-            char *buf_temp = buf;
-            Serial.println(buf);
-          }
-          Serial.println();
 
           if ((millis() - last_millis_for_printing) > 400)
           {
