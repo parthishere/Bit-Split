@@ -304,15 +304,10 @@ void loop()
           }
           else if (b2_pin_as_mode)
           {
-            upper_range = 40;
-            lower_range = 70;
-          }
-          else if (b3_pin_as_mode)
-          {
             upper_range = 50;
             lower_range = 70;
           }
-          else if (b4_pin_as_mode)
+          else if (b3_pin_as_mode)
           {
             upper_range = 60;
             lower_range = 70;
@@ -369,7 +364,7 @@ void loop()
               sprintf(buf, "%02X%02X%02X%02X%02X%02X%02X", epc[i][5], epc[i][6], epc[i][7], epc[i][8], epc[i][9], epc[i][10], epc[i][11], epc[i][12]);
               char *buf_temp = buf;
               tft.fillRect(5, 90 + i * 30, 220, 25, BLACK);
-              inputs(buf_temp, i, map(rssi[i], upper_range, lower_range, 4, 0));
+              inputs(buf_temp, i, map(rssi_int[i], upper_range, lower_range, 4, 0));
               last_millis_for_printing = millis();
               if (i == 1)
               {
