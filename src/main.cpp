@@ -92,71 +92,66 @@ void periodicClear()
   ledcWrite(ledChannel, 0);
 }
 
-void swap(int *a, int *b, int *c, int *d) {
+void swap(int *a, int *b, byte c[], byte d[])
+{
   int t = *a;
   *a = *b;
   *b = t;
-  t = *c;
-  *c = *d;
-  *d = t;
+
+  byte temp[12];
+  memcpy(temp, c, 12);
+  memcpy(c, d, 12);
+  memcpy(d, temp, 12);
 }
 
-int partition(int array1[], int array2[], int low, int high) {
-    
+int partition(int rssi[], byte epc[][12], int low, int high)
+{
+
   // select the rightmost element of array1 as pivot
-  int pivot = array1[high];
-  
+  int pivot = rssi[high];
+
   // pointer for greater element
   int i = (low - 1);
 
   // traverse each element of the arrays
   // compare the elements of array1 with the pivot
-  for (int j = low; j < high; j++) {
-    if (array1[j] <= pivot) {
-        
+  for (int j = low; j < high; j++)
+  {
+    if (rssi[j] <= pivot)
+    {
+
       // if element smaller than pivot is found
       // swap it with the greater element pointed by i
       i++;
-      
+
       // swap elements at i with elements at j
-      swap(&array1[i], &array1[j], &array2[i], &array2[j]);
+      swap(&rssi[i], &rssi[j], epc[i], epc[j]);
     }
   }
-  
+
   // swap pivot with the greater element at i
-  swap(&array1[i + 1], &array1[high], &array2[i + 1], &array2[high]);
-  
+  swap(&rssi[i + 1], &rssi[high], epc[i + 1], epc[high]);
+
   // return the partition point
   return (i + 1);
 }
 
-void quickSort(int array1[], int array2[], int low, int high) {
-  if (low < high) {
-      
+void quickSort(int rssi[], byte epc[][12], int low, int high)
+{
+  if (low < high)
+  {
+
     // find the pivot element such that
     // elements smaller than pivot are on left of pivot
     // elements greater than pivot are on right of pivot
-    int pi = partition(array1, array2, low, high);
+    int pi = partition(rssi, epc, low, high);
 
     // recursive call on the left of pivot
-    quickSort(array1, array2, low, pi - 1);
+    quickSort(rssi, epc, low, pi - 1);
 
     // recursive call on the right of pivot
-    quickSort(array1, array2, pi + 1, high);
+    quickSort(rssi, epc, pi + 1, high);
   }
-}
-
-
-
-
-
-
-
-void swap(byte *a, byte *b)
-{
-  byte t = *a;
-  *a = *b;
-  *b = t;
 }
 
 void printArray(int array[], int size)
@@ -167,57 +162,57 @@ void printArray(int array[], int size)
   Serial.println();
 }
 
-int partition(int array[], int low, int high, byte epc[])
-{
+// int partition(int array[], int low, int high, byte epc[])
+// {
 
-  // select the rightmost element as pivot
-  int pivot = array[high];
-  int pivot_card = epc[high];
+//   // select the rightmost element as pivot
+//   int pivot = array[high];
+//   int pivot_card = epc[high];
 
-  // pointer for greater element
-  int i = (low - 1);
+//   // pointer for greater element
+//   int i = (low - 1);
 
-  // traverse each element of the array
-  // compare them with the pivot
-  for (int j = low; j < high; j++)
-  {
-    if (array[j] <= pivot)
-    {
+//   // traverse each element of the array
+//   // compare them with the pivot
+//   for (int j = low; j < high; j++)
+//   {
+//     if (array[j] <= pivot)
+//     {
 
-      // if element smaller than pivot is found
-      // swap it with the greater element pointed by i
-      i++;
+//       // if element smaller than pivot is found
+//       // swap it with the greater element pointed by i
+//       i++;
 
-      // swap element at i with element at j
-      swap(&array[i], &array[j]);
-      swap(&epc[i], &epc[j]);
-    }
-  }
+//       // swap element at i with element at j
+//       swap(&array[i], &array[j]);
+//       swap(&epc[i], &epc[j]);
+//     }
+//   }
 
-  // swap pivot with the greater element at i
-  swap(&array[i + 1], &array[high]);
-  swap(&epc[i + 1], &epc[high]);
-  // return the partition point
-  return (i + 1);
-}
+//   // swap pivot with the greater element at i
+//   swap(&array[i + 1], &array[high]);
+//   swap(&epc[i + 1], &epc[high]);
+//   // return the partition point
+//   return (i + 1);
+// }
 
-void quickSort(int array[], int low, int high, byte epc[])
-{
-  if (low < high)
-  {
+// void quickSort(int array[], int low, int high, byte epc[])
+// {
+//   if (low < high)
+//   {
 
-    // find the pivot element such that
-    // elements smaller than pivot are on left of pivot
-    // elements greater than pivot are on righ of pivot
-    int pi = partition(array, low, high, epc);
+//     // find the pivot element such that
+//     // elements smaller than pivot are on left of pivot
+//     // elements greater than pivot are on righ of pivot
+//     int pi = partition(array, low, high, epc);
 
-    // recursive call on the left of pivot
-    quickSort(array, low, pi - 1, epc);
+//     // recursive call on the left of pivot
+//     quickSort(array, low, pi - 1, epc);
 
-    // recursive call on the right of pivot
-    quickSort(array, pi + 1, high, epc);
-  }
-}
+//     // recursive call on the right of pivot
+//     quickSort(array, pi + 1, high, epc);
+//   }
+// }
 
 void setup()
 {
@@ -430,14 +425,13 @@ void loop()
             Serial.print(" ");
           }
           Serial.println();
-          quickSort(rssi_int, 0, num_cards - 1, epc[num_cards]);
+          quickSort(rssi_int, epc, 0, num_cards - 1);
           Serial.println("Sorted");
           for (int i = 0; i < num_cards; i++)
           {
             Serial.print(rssi_int[i]);
             Serial.print(" ");
           }
-          Serial.println();
 
           Serial.println("Sorted EPC");
           for (int i = 0; i < num_cards; i++)
@@ -448,6 +442,7 @@ void loop()
             char *buf_temp = buf;
             Serial.println(buf);
           }
+          Serial.println();
 
           if ((millis() - last_millis_for_printing) > 400)
           {
