@@ -48,12 +48,12 @@ void batteryDraw(int percentage, bool charge, int charging_percent);
 void modee();
 void charge();
 
-void change_delay(int intensity);
+int change_delay(int intensity);
 
 int count = 0, count_t = 0, totalpackets = 0;
 byte tdata[200];
 bool initial = true;
-int delay_buz = 20000, intensity;
+int delay_buz = -1, intensity;
 const int freq = 5000;
 const int ledChannel = 0;
 const int resolution = 8;
@@ -84,6 +84,9 @@ D33 : B4
 pot : D4
 */
 int mode = 1;
+
+static const BaseType_t pro_cpu = 0;
+static const BaseType_t app_cpu = 1;
 void periodicClear()
 {
 
@@ -154,14 +157,26 @@ void quickSort(int rssi[], byte epc[][12], int low, int high)
   }
 }
 
-void printArray(int array[], int size)
+void beep(void *parameters)
 {
-  int i;
-  for (i = 0; i < size; i++)
-    Serial.print(array[i]);
-  Serial.println();
+  char str[50];
+  while (true)
+  {
+    Serial.print("Buz delay in task beep ");
+    Serial.println(delay_buz);
+    if (delay_buz == -1)
+    {
+      ledcWrite(buzPin, 0);
+    }
+    else
+    {
+      ledcWrite(buzPin, map(analogRead(potPin), 4095, 0, 100, 0));
+      delay(intensity);
+      ledcWrite(buzPin, 0);
+      delay(intensity);
+    }
+  }
 }
-
 void setup()
 {
 
@@ -206,6 +221,14 @@ void setup()
 
   ledcWrite(ledChannel, 0);
   last_millis_for_printing = millis();
+
+  xTaskCreatePinnedToCore(beep,
+                          "Buzzer",
+                          2048,
+                          NULL,
+                          1,
+                          NULL,
+                          app_cpu);
 }
 
 void loop()
@@ -233,7 +256,7 @@ void loop()
     periodicClear();
     tft.fillRect(50, 10, 10, 12, BLACK);
     modee();
-    upper_range = 35;
+    upper_range = 45;
     lower_range = 70;
   }
   else if (digitalRead(b3pin) == 0)
@@ -247,7 +270,7 @@ void loop()
     mode = 3;
     tft.fillRect(50, 10, 10, 12, BLACK);
     modee();
-    upper_range = 55;
+    upper_range = 60;
     lower_range = 70;
   }
 
@@ -351,23 +374,18 @@ void loop()
             {
 
               char buf[100];
-              sprintf(buf, "%02X%02X%02X%02X%02X%02X%02X", epc[i][5], epc[i][6], epc[i][7], epc[i][8], epc[i][9], epc[i][10], epc[i][11], epc[i][12]);
+              sprintf(buf, "02X%02X%02X", epc[i][10], epc[i][11], epc[i][12]);
               char *buf_temp = buf;
               tft.fillRect(5, 90 + i * 30, 220, 25, BLACK);
-              Serial.print("Upper range");
-              Serial.print(" ");
-              Serial.print(upper_range);
-              Serial.print(" ");
-              Serial.print("Lower range");
-              Serial.print(" ");
-              Serial.println(lower_range);
 
               inputs(buf_temp, i, map(rssi_int[i], upper_range, lower_range, 4, 0));
               last_millis_for_printing = millis();
-              if (i == 1)
+              if (i == 0)
               {
-                intensity = map(rssi[0], upper_range, lower_range, 4, 0);
-                change_delay(intensity);
+                intensity = map(rssi_int[0], upper_range, lower_range, 10, 1);
+                delay_buz = change_delay(intensity);
+                Serial.print("Buz delay in main ");
+                Serial.println(delay_buz);
               }
             }
           }
@@ -382,55 +400,55 @@ void loop()
     }
   }
 
-  if (((millis() - last_millis_to_off) > delay_buz) && on == true)
-  {
-    on = false;
-    last_millis_to_off = millis();
-    ledcWrite(ledChannel, 0);
-  }
-  else if (((millis() - last_millis_to_off) > delay_buz) && on == false)
-  {
-    last_millis_to_off = millis();
-    on = true;
-    ledcWrite(ledChannel, map(map(analogRead(potPin), 0, 4095, 0, 255), 0, 255, 0, 50));
-  }
-
   if ((millis() - last_millis_to_on > 5000))
   {
     periodicClear();
     last_millis_to_on = millis();
   }
+  delay_buz = change_delay(-1);
   Serial.flush();
 }
 
-void change_delay(int intensity)
+int change_delay(int intensity)
 {
   switch (intensity)
   {
 
-  case 0:
-    delay_buz = 20000;
-    break;
+  case -1:
+    return -1;
 
   case 1:
-    delay_buz = 2000;
-    break;
+    return 100;
 
   case 2:
-    delay_buz = 800;
-    break;
+    return 200;
 
   case 3:
-    delay_buz = 200;
-    break;
+    return 300;
 
   case 4:
-    delay_buz = 50;
-    break;
+    return 400;
+
+  case 5:
+    return 500;
+
+  case 6:
+    return 600;
+
+  case 7:
+    return 700;
+
+  case 8:
+    return 800;
+
+  case 9:
+    return 900;
+
+  case 10:
+    return 1200;
 
   default:
-    delay_buz = 20000;
-    break;
+    return -1;
   }
 }
 
