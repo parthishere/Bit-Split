@@ -68,6 +68,8 @@ TFT_eSPI tft = TFT_eSPI();
 Ticker periodicTicker;
 Ticker onceTicker;
 
+QueueHandle_t xQueue;
+
 bool b1_pin_as_mode = false;
 bool b2_pin_as_mode = false;
 bool b3_pin_as_mode = false;
@@ -162,6 +164,15 @@ void beep(void *parameters)
   char str[50];
   while (true)
   {
+    int intensity_received;
+    int delay_buz_received;
+    if (xQueueReceive(xQueue, &intensity_received, portMAX_DELAY) == pdTRUE)
+    {
+      xQueueReceive(xQueue, &delay_buz_received, portMAX_DELAY);
+      // Use intensity_received and delay_buz_received
+      Serial.println(delay_buz_received);
+      Serial.println();
+    }
 
     if (delay_buz == -1)
     {
@@ -169,6 +180,7 @@ void beep(void *parameters)
     }
     else
     {
+      Serial.println(analogRead(potPin));
       ledcWrite(buzPin, map(analogRead(potPin), 4095, 0, 100, 0));
       delay(intensity);
       ledcWrite(buzPin, 0);
@@ -232,6 +244,7 @@ void setup()
                           1,
                           NULL,
                           app_cpu);
+  QueueHandle_t xQueue = xQueueCreate(10, sizeof(int));
 }
 
 void loop()
@@ -386,6 +399,7 @@ void loop()
               {
                 intensity = map(rssi_int[0], upper_range, lower_range, 1, 10);
                 delay_buz = change_delay(intensity);
+                xQueueSend(xQueue, &delay_buz, 0);
               }
             }
           }
@@ -406,6 +420,7 @@ void loop()
     last_millis_to_on = millis();
   }
   delay_buz = change_delay(-1);
+  xQueueSend(xQueue, &delay_buz, 0);
   Serial.flush();
 }
 
