@@ -162,8 +162,7 @@ void beep(void *parameters)
   char str[50];
   while (true)
   {
-    Serial.print("Buz delay in task beep ");
-    Serial.println(delay_buz);
+
     if (delay_buz == -1)
     {
       ledcWrite(buzPin, 0);
@@ -381,15 +380,12 @@ void loop()
               sprintf(buf, "02X%02X%02X", epc[i][10], epc[i][11], epc[i][12]);
               char *buf_temp = buf;
               tft.fillRect(5, 90 + i * 30, 220, 25, BLACK);
-
               inputs(buf_temp, i, map(rssi_int[i], upper_range, lower_range, 4, 0));
               last_millis_for_printing = millis();
               if (i == 0)
               {
-                intensity = map(rssi_int[0], upper_range, lower_range, 10, 1);
+                intensity = map(rssi_int[0], upper_range, lower_range, 1, 10);
                 delay_buz = change_delay(intensity);
-                Serial.print("Buz delay in main ");
-                Serial.println(delay_buz);
               }
             }
           }
@@ -456,11 +452,6 @@ int change_delay(int intensity)
   }
 }
 
-int calculate_distance(int rssi)
-{
-
-  return 0;
-}
 void inputs(char message[], int number, int strength) // number = number of box we want to print at screen , strength = signal strength of wifi
 {
   tft.fillRect(5, 90 + number * 30, 220, 25, BLACK);
