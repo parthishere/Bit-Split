@@ -174,6 +174,10 @@ void beep(void *parameters)
       delay(intensity);
       ledcWrite(buzPin, 0);
       delay(intensity);
+      ledcWrite(buzPin, map(analogRead(potPin), 4095, 0, 100, 0));
+      delay(intensity);
+      ledcWrite(buzPin, 0);
+      delay(intensity);
     }
   }
 }
