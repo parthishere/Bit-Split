@@ -220,6 +220,8 @@ void loop()
     periodicClear();
     tft.fillRect(50, 10, 10, 12, BLACK);
     modee();
+    upper_range = 30;
+    lower_range = 70;
   }
   else if (digitalRead(b2pin) == 0)
   {
@@ -230,8 +232,9 @@ void loop()
     mode = 2;
     periodicClear();
     tft.fillRect(50, 10, 10, 12, BLACK);
-
     modee();
+    upper_range = 35;
+    lower_range = 70;
   }
   else if (digitalRead(b3pin) == 0)
   {
@@ -243,9 +246,11 @@ void loop()
     periodicClear();
     mode = 3;
     tft.fillRect(50, 10, 10, 12, BLACK);
-
     modee();
+    upper_range = 55;
+    lower_range = 70;
   }
+
   else if (digitalRead(b4pin) == 0)
   {
     b1_pin_as_mode = false;
@@ -297,21 +302,6 @@ void loop()
           SerialBT.print("NUM ");
           SerialBT.print(static_cast<int>(num_cards));
           // RSSI
-          if (b1_pin_as_mode)
-          {
-            upper_range = 30;
-            lower_range = 70;
-          }
-          else if (b2_pin_as_mode)
-          {
-            upper_range = 50;
-            lower_range = 70;
-          }
-          else if (b3_pin_as_mode)
-          {
-            upper_range = 60;
-            lower_range = 70;
-          }
 
           byte rssi[num_cards];
           int rssi_int[num_cards];
