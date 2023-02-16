@@ -1,6 +1,7 @@
 #include <Arduino.h>
 
 #include "BluetoothSerial.h"
+#include "esp_system.h"
 
 #include <TFT_eSPI.h> // Hardware-specific library
 #include <SPI.h>
@@ -48,7 +49,7 @@ void batteryDraw(int percentage, bool charge, int charging_percent);
 void modee();
 void charge();
 
-int change_delay(int intensity);
+void change_delay(int intensity);
 
 int count = 0, count_t = 0, totalpackets = 0;
 byte tdata[200];
@@ -68,7 +69,7 @@ TFT_eSPI tft = TFT_eSPI();
 Ticker periodicTicker;
 Ticker onceTicker;
 
-QueueHandle_t xQueue;
+// QueueHandle_t xQueue;
 
 bool b1_pin_as_mode = false;
 bool b2_pin_as_mode = false;
@@ -93,8 +94,6 @@ void periodicClear()
 {
 
   tft.fillRect(5, 90, 235, 250, BLACK);
-
-  ledcWrite(ledChannel, 0);
 }
 
 void swap(int *a, int *b, byte c[], byte d[])
@@ -166,32 +165,23 @@ void beep(void *parameters)
   {
     int intensity_received;
     int delay_buz_received;
-    if (xQueueReceive(xQueue, &intensity_received, portMAX_DELAY) == pdTRUE)
-    {
-      xQueueReceive(xQueue, &delay_buz_received, portMAX_DELAY);
-      // Use intensity_received and delay_buz_received
-      Serial.println(delay_buz_received);
-      Serial.println();
-    }
+    // if (xQueueReceive(xQueue, &intensity_received, portMAX_DELAY))
+    // {
+    //   xQueueReceive(xQueue, &delay_buz_received, portMAX_DELAY);
+    //   // Use intensity_received and delay_buz_received
+    //   Serial.println(delay_buz_received);
+    //   Serial.println();
+    // }
 
     if (delay_buz == -1)
     {
-      ledcWrite(buzPin, 0);
     }
     else
     {
-      Serial.println(analogRead(potPin));
-      ledcWrite(buzPin, map(analogRead(potPin), 4095, 0, 100, 0));
-      delay(intensity);
-      ledcWrite(buzPin, 0);
-      delay(intensity);
-      ledcWrite(buzPin, map(analogRead(potPin), 4095, 0, 100, 0));
-      delay(intensity);
-      ledcWrite(buzPin, 0);
-      delay(intensity);
     }
   }
 }
+
 void setup()
 {
 
@@ -199,6 +189,14 @@ void setup()
   Serial2.begin(115200);
   delay(1000);
   SerialBT.begin();
+  esp_log_level_set("*", ESP_LOG_ERROR);
+  esp_log_level_set("heap_init", ESP_LOG_WARN);
+  esp_log_level_set("heap_caps", ESP_LOG_WARN);
+  esp_log_level_set("spi_master", ESP_LOG_WARN);
+
+  esp_log_set_vprintf(vprintf);
+  // esp_log_set_putchar(esp_log_putchar);
+
   Serial.println("Bluetooth Started! Ready to pair...");
 
   pinMode(buzPin, OUTPUT);
@@ -209,10 +207,7 @@ void setup()
   pinMode(b3pin, INPUT_PULLUP);
   pinMode(b4pin, INPUT_PULLUP);
 
-  ledcSetup(ledChannel, freq, resolution);
-
   // attach the channel to the GPIO to be controlled
-  ledcAttachPin(buzPin, ledChannel);
 
   /* TFT */
 
@@ -234,17 +229,17 @@ void setup()
   tft.setTextColor(CYANN);
   tft.print("SGL");
 
-  ledcWrite(ledChannel, 0);
+  // ledcWrite(ledChannel, 0);
   last_millis_for_printing = millis();
 
-  xTaskCreatePinnedToCore(beep,
-                          "Buzzer",
-                          2048,
-                          NULL,
-                          1,
-                          NULL,
-                          app_cpu);
-  QueueHandle_t xQueue = xQueueCreate(10, sizeof(int));
+  // xTaskCreatePinnedToCore(beep,
+  //                         "Buzzer",
+  //                         2048,
+  //                         NULL,
+  //                         1,
+  //                         NULL,
+  //                         app_cpu);
+  // QueueHandle_t xQueue = xQueueCreate(10, sizeof(int));
 }
 
 void loop()
@@ -397,9 +392,8 @@ void loop()
               last_millis_for_printing = millis();
               if (i == 0)
               {
-                intensity = map(rssi_int[0], upper_range, lower_range, 1, 10);
-                delay_buz = change_delay(intensity);
-                xQueueSend(xQueue, &delay_buz, 0);
+                intensity = map(rssi_int[0], upper_range, lower_range, 4, 1);
+                change_delay(intensity);
               }
             }
           }
@@ -414,56 +408,78 @@ void loop()
     }
   }
 
+  // Serial.print("Delay of buzzer : ");
+  // Serial.print(delay_buz);
+  // Serial.print("   Intensity of signal : ");
+  // Serial.print(intensity);
+  // Serial.println();
+
+  // delay_buz = change_delay(-1);
   if ((millis() - last_millis_to_on > 5000))
   {
     periodicClear();
     last_millis_to_on = millis();
   }
-  delay_buz = change_delay(-1);
-  xQueueSend(xQueue, &delay_buz, 0);
   Serial.flush();
 }
 
-int change_delay(int intensity)
+void change_delay(int intensity)
 {
   switch (intensity)
   {
 
   case -1:
-    return -1;
+    digitalWrite(buzPin, 0);
+    break;
 
   case 1:
-    return 100;
+    digitalWrite(buzPin, 1);
+    delay(25);
+    digitalWrite(buzPin, 0);
+    delay(275);
+    break;
 
   case 2:
-    return 200;
+    digitalWrite(buzPin, 1);
+    delay(75);
+    digitalWrite(buzPin, 0);
+    delay(225);
+    break;
 
   case 3:
-    return 300;
+    digitalWrite(buzPin, 1);
+    delay(125);
+    digitalWrite(buzPin, 0);
+    delay(175);
+    break;
 
   case 4:
-    return 400;
+    digitalWrite(buzPin, 1);
+    delay(170);
+    digitalWrite(buzPin, 0);
+    delay(125);
+    break;
+    //   break;
 
-  case 5:
-    return 500;
+    // case 5:
+    //   break;
 
-  case 6:
-    return 600;
+    // case 6:
+    //   break;
 
-  case 7:
-    return 700;
+    // case 7:
+    //   break;
 
-  case 8:
-    return 800;
+    // case 8:
+    //   break;
 
-  case 9:
-    return 900;
-
-  case 10:
-    return 1200;
+    // case 9:
+    //   break;
+    // case 10:
+    //   break0;
 
   default:
-    return -1;
+    break;
   }
 }
 
@@ -526,11 +542,11 @@ void batteryDraw(int percentage, bool charge, int charging_percent)
     tft.fillRect(180, 9, 10, 10, WHITE);
     charge_length -= 10;
 
-    Serial.println(charge_length);
+    // Serial.println(charge_length);
   }
   else
   {
-    Serial.println("charging process is not going on ");
+    // Serial.println("charging process is not going on ");
     int drawValue = map(percentage, 0, 100, 0, 50);
     int battery_x = 190 + (50 - (percentage * 50 / 100));
 
