@@ -49,12 +49,13 @@ void batteryDraw(int percentage, bool charge, int charging_percent);
 void modee();
 void charge();
 
-void change_delay(int intensity);
+int change_delay(int intensity);
 
 int count = 0, count_t = 0, totalpackets = 0;
 byte tdata[200];
 bool initial = true;
 int delay_buz = -1, intensity;
+int temp_delay_buz{};
 const int freq = 5000;
 const int ledChannel = 0;
 const int resolution = 8;
@@ -75,6 +76,11 @@ bool b1_pin_as_mode = false;
 bool b2_pin_as_mode = false;
 bool b3_pin_as_mode = false;
 bool b4_pin_as_mode = false;
+
+unsigned long buzzerStartMillis = 0;
+int buzzerState = 0;
+int buzzerDuration = 1000;
+int buzzerEndMillis;
 
 /*
 Buz : D32
@@ -111,32 +117,21 @@ void swap(int *a, int *b, byte c[], byte d[])
 int partition(int rssi[], byte epc[][12], int low, int high)
 {
 
-  // select the rightmost element of array1 as pivot
   int pivot = rssi[high];
-
-  // pointer for greater element
   int i = (low - 1);
 
-  // traverse each element of the arrays
-  // compare the elements of array1 with the pivot
   for (int j = low; j < high; j++)
   {
     if (rssi[j] <= pivot)
     {
 
-      // if element smaller than pivot is found
-      // swap it with the greater element pointed by i
       i++;
-
-      // swap elements at i with elements at j
       swap(&rssi[i], &rssi[j], epc[i], epc[j]);
     }
   }
 
-  // swap pivot with the greater element at i
   swap(&rssi[i + 1], &rssi[high], epc[i + 1], epc[high]);
 
-  // return the partition point
   return (i + 1);
 }
 
@@ -144,41 +139,11 @@ void quickSort(int rssi[], byte epc[][12], int low, int high)
 {
   if (low < high)
   {
-
-    // find the pivot element such that
-    // elements smaller than pivot are on left of pivot
-    // elements greater than pivot are on right of pivot
     int pi = partition(rssi, epc, low, high);
 
-    // recursive call on the left of pivot
     quickSort(rssi, epc, low, pi - 1);
 
-    // recursive call on the right of pivot
     quickSort(rssi, epc, pi + 1, high);
-  }
-}
-
-void beep(void *parameters)
-{
-  char str[50];
-  while (true)
-  {
-    int intensity_received;
-    int delay_buz_received;
-    // if (xQueueReceive(xQueue, &intensity_received, portMAX_DELAY))
-    // {
-    //   xQueueReceive(xQueue, &delay_buz_received, portMAX_DELAY);
-    //   // Use intensity_received and delay_buz_received
-    //   Serial.println(delay_buz_received);
-    //   Serial.println();
-    // }
-
-    if (delay_buz == -1)
-    {
-    }
-    else
-    {
-    }
   }
 }
 
@@ -197,6 +162,8 @@ void setup()
   esp_log_set_vprintf(vprintf);
   // esp_log_set_putchar(esp_log_putchar);
 
+  Serial.println("Reader Started");
+
   Serial.println("Bluetooth Started! Ready to pair...");
 
   pinMode(buzPin, OUTPUT);
@@ -210,7 +177,6 @@ void setup()
   // attach the channel to the GPIO to be controlled
 
   /* TFT */
-
   tft.init();
   // uint16_t identifier = tft.readID();
   tft.begin();
@@ -229,8 +195,20 @@ void setup()
   tft.setTextColor(CYANN);
   tft.print("SGL");
 
-  // ledcWrite(ledChannel, 0);
   last_millis_for_printing = millis();
+
+  digitalWrite(buzPin, LOW);
+  while (!Serial)
+  {
+    digitalWrite(buzPin, HIGH);
+  }
+
+  Serial.println("Serial Monitor started");
+  while (!Serial2)
+  {
+    digitalWrite(buzPin, HIGH);
+  }
+  delay_buz = change_delay(-1);
 
   // xTaskCreatePinnedToCore(beep,
   //                         "Buzzer",
@@ -240,6 +218,7 @@ void setup()
   //                         NULL,
   //                         app_cpu);
   // QueueHandle_t xQueue = xQueueCreate(10, sizeof(int));
+  // timerBegin();
 }
 
 void loop()
@@ -375,8 +354,12 @@ void loop()
           }
           SerialBT.println("\n");
           // Serial.printf("\n");
-
-          quickSort(rssi_int, epc, 0, num_cards - 1);
+          if (!(num_cards <= 1))
+          {
+            quickSort(rssi_int, epc, 0, num_cards - 1);
+          }
+          else
+            ;
 
           if ((millis() - last_millis_for_printing) > 400)
           {
@@ -388,12 +371,14 @@ void loop()
               sprintf(buf, "02X%02X%02X", epc[i][10], epc[i][11], epc[i][12]);
               char *buf_temp = buf;
               tft.fillRect(5, 90 + i * 30, 220, 25, BLACK);
-              inputs(buf_temp, i, map(rssi_int[i], upper_range, lower_range, 4, 0));
+              Serial.print("RSSI right now.. ");
+              Serial.println(rssi_int[i]);
+              int rssi_for_print_in_tft = map(rssi_int[i], upper_range, lower_range, 4, 1);
+              inputs(buf_temp, i, rssi_for_print_in_tft);
               last_millis_for_printing = millis();
               if (i == 0)
               {
-                intensity = map(rssi_int[0], upper_range, lower_range, 4, 1);
-                change_delay(intensity);
+                delay_buz = change_delay(rssi_for_print_in_tft);
               }
             }
           }
@@ -408,78 +393,89 @@ void loop()
     }
   }
 
-  // Serial.print("Delay of buzzer : ");
-  // Serial.print(delay_buz);
-  // Serial.print("   Intensity of signal : ");
-  // Serial.print(intensity);
-  // Serial.println();
+  if (delay_buz != -1)
+  {
+    if (buzzerState == 0 && millis() - buzzerEndMillis >= delay_buz)
+    {
+      digitalWrite(buzPin, HIGH);
+      buzzerState = 1;
+      buzzerStartMillis = millis();
+    }
 
-  // delay_buz = change_delay(-1);
-  if ((millis() - last_millis_to_on > 5000))
+    if (buzzerState == 1 && millis() - buzzerStartMillis >= temp_delay_buz)
+    {
+      digitalWrite(buzPin, LOW);
+      buzzerState = 0;
+      buzzerEndMillis = millis();
+      delay_buz = change_delay(-1);
+    }
+  }
+  else
+  {
+    digitalWrite(buzPin, LOW);
+    buzzerState = 0;
+  }
+
+  if ((millis() - last_millis_to_on > 4000))
   {
     periodicClear();
     last_millis_to_on = millis();
   }
+
   Serial.flush();
+
+  // tft.fillRect(5, 90, 235, 250, BLACK);
+  // tft.fillRect(5, 120, 235, 250, BLACK);
+  // tft.fillRect(5, 150, 235, 250, BLACK);
+  // tft.fillRect(5, 180, 235, 250, BLACK);
+  // tft.fillRect(5, 210, 235, 250, BLACK);
 }
 
-void change_delay(int intensity)
+int change_delay(int intensity)
 {
   switch (intensity)
   {
 
   case -1:
     digitalWrite(buzPin, 0);
-    break;
+    // break;
+    return -1;
 
   case 1:
-    digitalWrite(buzPin, 1);
-    delay(25);
-    digitalWrite(buzPin, 0);
-    delay(275);
-    break;
+    // buzzerStart(25);
+    temp_delay_buz = 400;
+    return 600;
 
   case 2:
-    digitalWrite(buzPin, 1);
-    delay(75);
-    digitalWrite(buzPin, 0);
-    delay(225);
-    break;
+    // digitalWrite(buzPin, 1);
+    // delay(75);
+    // digitalWrite(buzPin, 0);
+    // delay(225);
+    // break;
+    temp_delay_buz = 300;
+    return 300;
 
   case 3:
-    digitalWrite(buzPin, 1);
-    delay(125);
-    digitalWrite(buzPin, 0);
-    delay(175);
-    break;
+    // digitalWrite(buzPin, 1);
+    // delay(125);
+    // digitalWrite(buzPin, 0);
+    // delay(175);
+    // break;
+    temp_delay_buz = 70;
+    return 180;
 
   case 4:
-    digitalWrite(buzPin, 1);
-    delay(170);
-    digitalWrite(buzPin, 0);
-    delay(125);
-    break;
-    //   break;
-
-    // case 5:
-    //   break;
-
-    // case 6:
-    //   break;
-
-    // case 7:
-    //   break;
-
-    // case 8:
-    //   break;
-
-    // case 9:
-    //   break;
-    // case 10:
-    //   break0;
+    // digitalWrite(buzPin, 1);
+    // delay(200);
+    // digitalWrite(buzPin, 0);
+    // delay(100);
+    // break;
+    temp_delay_buz = 10;
+    return 30;
 
   default:
-    break;
+    // break;
+    return -1;
   }
 }
 
