@@ -19,7 +19,7 @@
 // #define debugln(x)
 // #endif
 
-int buzPin = 32, potPin = 34, b1pin = 27, b2pin = 26, b3pin = 25, b4pin = 33;
+int buzPin = 32, potPin = 34, b1pin = 27, b2pin = 26, b3pin = 25, b4pin = 33, batPin = 4;
 
 #define LCD_CS A3 // Chip Select goes to Analog 3
 #define LCD_CD A2 // Command/Data goes to Analog 2
@@ -45,7 +45,7 @@ int charge_length = 50, is_charging;
 
 void inputs(char *message, int number, int strength);
 void wifi(int x, int y, int number);
-void batteryDraw(int percentage, bool charge, int charging_percent);
+void batteryDraw(int analog_value);
 void modee();
 void charge();
 
@@ -60,7 +60,7 @@ const int freq = 5000;
 const int ledChannel = 0;
 const int resolution = 8;
 bool on;
-long int last_millis_to_on, last_millis_to_off;
+long int last_millis_to_on_battery_draw, last_millis_to_on, last_millis_to_off;
 
 int upper_range{30}, lower_range{70};
 long int last_millis_for_printing;
@@ -174,6 +174,8 @@ void setup()
   pinMode(b3pin, INPUT_PULLUP);
   pinMode(b4pin, INPUT_PULLUP);
 
+  pinMode(batPin, INPUT);
+
   // attach the channel to the GPIO to be controlled
 
   /* TFT */
@@ -198,6 +200,16 @@ void setup()
   last_millis_for_printing = millis();
 
   digitalWrite(buzPin, LOW);
+  delay(2000);
+  digitalWrite(buzPin, HIGH);
+  delay(100);
+  digitalWrite(buzPin, LOW);
+  delay(100);
+  digitalWrite(buzPin, HIGH);
+  delay(100);
+  digitalWrite(buzPin, LOW);
+  delay(100);
+
   while (!Serial)
   {
     digitalWrite(buzPin, HIGH);
@@ -209,16 +221,6 @@ void setup()
     digitalWrite(buzPin, HIGH);
   }
   delay_buz = change_delay(-1);
-
-  // xTaskCreatePinnedToCore(beep,
-  //                         "Buzzer",
-  //                         2048,
-  //                         NULL,
-  //                         1,
-  //                         NULL,
-  //                         app_cpu);
-  // QueueHandle_t xQueue = xQueueCreate(10, sizeof(int));
-  // timerBegin();
 }
 
 void loop()
@@ -421,14 +423,13 @@ void loop()
     periodicClear();
     last_millis_to_on = millis();
   }
+  // if ((millis() - last_millis_to_on_battery_draw > 5000))
+  // {
+  // batteryDraw(analogRead(batPin));
+  // last_millis_to_on_battery_draw = millis();
+  // }
 
   Serial.flush();
-
-  // tft.fillRect(5, 90, 235, 250, BLACK);
-  // tft.fillRect(5, 120, 235, 250, BLACK);
-  // tft.fillRect(5, 150, 235, 250, BLACK);
-  // tft.fillRect(5, 180, 235, 250, BLACK);
-  // tft.fillRect(5, 210, 235, 250, BLACK);
 }
 
 int change_delay(int intensity)
@@ -438,43 +439,25 @@ int change_delay(int intensity)
 
   case -1:
     digitalWrite(buzPin, 0);
-    // break;
     return -1;
 
   case 1:
-    // buzzerStart(25);
     temp_delay_buz = 400;
     return 600;
 
   case 2:
-    // digitalWrite(buzPin, 1);
-    // delay(75);
-    // digitalWrite(buzPin, 0);
-    // delay(225);
-    // break;
     temp_delay_buz = 300;
     return 300;
 
   case 3:
-    // digitalWrite(buzPin, 1);
-    // delay(125);
-    // digitalWrite(buzPin, 0);
-    // delay(175);
-    // break;
     temp_delay_buz = 70;
     return 180;
 
   case 4:
-    // digitalWrite(buzPin, 1);
-    // delay(200);
-    // digitalWrite(buzPin, 0);
-    // delay(100);
-    // break;
     temp_delay_buz = 10;
     return 30;
 
   default:
-    // break;
     return -1;
   }
 }
@@ -523,56 +506,42 @@ void wifi(int x, int y, int number)
   tft.fillRect(180 + 10 * x, 104 - 4 * y + number * 30, 8, 8 + 4 * x, WHITE);
 }
 
-void batteryDraw(int percentage, bool charge, int charging_percent)
+void batteryDraw(int analog_value)
 {
-  if (charge_length < 0)
-  {
-    charge_length = 50;
-  }
-  if (charge)
+
+  int percentage{map(analog_value, 0, 4095, 0, 100)};
+  Serial.print("PErcentage ");
+  Serial.println(percentage);
+  Serial.println("charging process is not going on ");
+  int drawValue = map(percentage, 0, 100, 0, 50);
+  int battery_x = 190 + (50 - (percentage * 50 / 100));
+
+  if (percentage <= 25)
   {
     tft.drawRect(190, 0, 50, 30, WHITE);
-    tft.fillRect(190, 2, 50, 25, BLACK);
-    tft.fillRect(190 + charge_length, 2, 50, 25, GREEN);
+    tft.fillRect(battery_x, 2, drawValue, 25, RED);
     tft.drawRect(180, 9, 10, 10, WHITE);
     tft.fillRect(180, 9, 10, 10, WHITE);
-    charge_length -= 10;
-
-    // Serial.println(charge_length);
+  }
+  else if (percentage == 100)
+  {
+    tft.drawRect(190, 0, 50, 30, WHITE);
+    tft.fillRect(battery_x, 2, drawValue, 25, PINK);
+    tft.drawRect(180, 9, 10, 10, WHITE);
+    tft.fillRect(180, 9, 10, 10, WHITE);
   }
   else
   {
-    // Serial.println("charging process is not going on ");
-    int drawValue = map(percentage, 0, 100, 0, 50);
-    int battery_x = 190 + (50 - (percentage * 50 / 100));
-
-    if (percentage <= 25)
-    {
-      tft.drawRect(190, 0, 50, 30, WHITE);
-      tft.fillRect(battery_x, 2, drawValue, 25, RED);
-      tft.drawRect(180, 9, 10, 10, WHITE);
-      tft.fillRect(180, 9, 10, 10, WHITE);
-    }
-    else if (percentage == 100)
-    {
-      tft.drawRect(190, 0, 50, 30, WHITE);
-      tft.fillRect(battery_x, 2, drawValue, 25, PINK);
-      tft.drawRect(180, 9, 10, 10, WHITE);
-      tft.fillRect(180, 9, 10, 10, WHITE);
-    }
-    else
-    {
-      tft.drawRect(190, 0, 50, 30, WHITE);
-      tft.fillRect(battery_x, 2, drawValue, 25, GREEN);
-      tft.drawRect(180, 9, 10, 10, WHITE);
-      tft.fillRect(180, 9, 10, 10, WHITE);
-    }
+    tft.drawRect(190, 0, 50, 30, WHITE);
+    tft.fillRect(battery_x, 2, drawValue, 25, GREEN);
+    tft.drawRect(180, 9, 10, 10, WHITE);
+    tft.fillRect(180, 9, 10, 10, WHITE);
   }
 }
 
 void modee()
 {
-  tft.setCursor(0, 10); // to write title "mode"
+  tft.setCursor(0, 10);
   tft.setTextColor(LIGHT_PINK);
   tft.setTextSize(2.8);
   tft.print("MODE");
