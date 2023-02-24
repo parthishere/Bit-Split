@@ -182,7 +182,7 @@ void setup()
   tft.init();
   // uint16_t identifier = tft.readID();
   tft.begin();
-  // tft.setRotation();
+  tft.setRotation(2);
   tft.fillScreen(WHITE);
   tft.setCursor(30, 120);
   tft.setTextSize(10);
