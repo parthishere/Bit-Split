@@ -61,7 +61,7 @@ const int ledChannel = 0;
 const int resolution = 8;
 bool on;
 long int last_millis_to_on_battery_draw, last_millis_to_on, last_millis_to_off;
-
+bool do_not_buz;
 int upper_range{30}, lower_range{70};
 long int last_millis_for_printing;
 BluetoothSerial SerialBT;
@@ -378,9 +378,20 @@ void loop()
               int rssi_for_print_in_tft = map(rssi_int[i], upper_range, lower_range, 4, 1);
               inputs(buf_temp, i, rssi_for_print_in_tft);
               last_millis_for_printing = millis();
+
               if (i == 0)
               {
-                delay_buz = change_delay(rssi_for_print_in_tft);
+
+                if (rssi_for_print_in_tft == 4)
+                {
+                  digitalWrite(buzPin, HIGH);
+                  do_not_buz = true;
+                }
+                else
+                {
+                  delay_buz = change_delay(rssi_for_print_in_tft);
+                  do_not_buz = false;
+                }
               }
             }
           }
@@ -395,8 +406,9 @@ void loop()
     }
   }
 
-  if (delay_buz != -1)
+  if (delay_buz != -1 && do_not_buz == false)
   {
+
     if (buzzerState == 0 && millis() - buzzerEndMillis >= delay_buz)
     {
       digitalWrite(buzPin, HIGH);
@@ -412,7 +424,8 @@ void loop()
       delay_buz = change_delay(-1);
     }
   }
-  else
+
+  else if (do_not_buz == false)
   {
     digitalWrite(buzPin, LOW);
     buzzerState = 0;
@@ -442,20 +455,20 @@ int change_delay(int intensity)
     return -1;
 
   case 1:
-    temp_delay_buz = 400;
-    return 600;
+    temp_delay_buz = 600; // OFF Time
+    return 100;           // ON TIME
 
   case 2:
-    temp_delay_buz = 300;
-    return 300;
+    temp_delay_buz = 320; // OFF Time
+    return 180;           // ON TIME
 
   case 3:
-    temp_delay_buz = 70;
-    return 180;
+    temp_delay_buz = 160; // OFF Time
+    return 240;           // ON TIME
 
   case 4:
-    temp_delay_buz = 10;
-    return 30;
+    temp_delay_buz = 299; // OFF Time
+    return 1;             // ON TIME
 
   default:
     return -1;
