@@ -9,6 +9,28 @@
 #include <Ticker.h>
 #include <list>
 
+
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#define buzChannel 0
+#define FREQ 4950
+#define RESOLUTION 8
+
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 64 // OLED display height, in pixels
+
+// Declaration for SSD1306 display connected using software SPI (default case):
+#define OLED_MOSI   21
+#define OLED_CLK   22
+#define OLED_DC    5
+#define OLED_CS    19
+#define OLED_RESET 4
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT,
+  OLED_MOSI, OLED_CLK, OLED_DC, OLED_RESET, OLED_CS);
+
 // #define DEBUG 1
 
 // #if DEBUG == 1
@@ -19,32 +41,33 @@
 // #define debugln(x)
 // #endif
 
-int buzPin = 32, potPin = 34, b1pin = 27, b2pin = 26, b3pin = 25, b4pin = 33, batPin = 4;
+int buzPin = 32, potPin = 34, b1pin = 27, b2pin = 26, b3pin = 25, b4pin = 33, batPin = 4, audioPin=33, jackIsConnectedPin = 35;
 
-#define LCD_CS A3 // Chip Select goes to Analog 3
-#define LCD_CD A2 // Command/Data goes to Analog 2
-#define LCD_WR A1 // LCD Write goes to Analog 1
-#define LCD_RD A0 // LCD Read goes to Analog 0
+// #define LCD_CS A3 // Chip Select goes to Analog 3
+// #define LCD_CD A2 // Command/Data goes to Analog 2
+// #define LCD_WR A1 // LCD Write goes to Analog 1
+// #define LCD_RD A0 // LCD Read goes to Analog 0
 
-#define BLACK 0x0000
-#define BLUE 0x001F
-#define RED 0xF800
-#define GREEN 0x07E0
-#define CYAN 0x07FF
-#define MAGENTA 0xF81F
-#define YELLOW 0xFFE0
-#define WHITE 0xFFFF
-#define PINK 0xEB34
-#define LIGHT_PINK 0x9f3b
-#define LIGHT_PURPLE 0x8594
-#define LIGHT_BLUE 0x93ff
-#define CYANN 0xE536F3
+// #define BLACK 0x0000
+// #define BLUE 0x001F
+// #define RED 0xF800
+// #define GREEN 0x07E0
+// #define CYAN 0x07FF
+// #define MAGENTA 0xF81F
+// #define YELLOW 0xFFE0
+// #define WHITE 0xFFFF
+// #define PINK 0xEB34
+// #define LIGHT_PINK 0x9f3b
+// #define LIGHT_PURPLE 0x8594
+// #define LIGHT_BLUE 0x93ff
+// #define CYANN 0xE536F3
 
 const char message[] = "card detail";
 int charge_length = 50, is_charging;
 
 void inputs(char *message, int number, int strength);
-void wifi(int x, int y, int number);
+void drawWiFiBars(int x, int y, int signal) ;
+void drawBatteryLevel(int x, int y, float voltage);
 void batteryDraw(int analog_value);
 void modee();
 void charge();
@@ -66,7 +89,7 @@ int upper_range{30}, lower_range{70};
 long int last_millis_for_printing;
 BluetoothSerial SerialBT;
 
-TFT_eSPI tft = TFT_eSPI();
+// TFT_eSPI tft = TFT_eSPI();
 Ticker periodicTicker;
 Ticker onceTicker;
 
@@ -75,7 +98,7 @@ Ticker onceTicker;
 bool b1_pin_as_mode = false;
 bool b2_pin_as_mode = false;
 bool b3_pin_as_mode = false;
-bool b4_pin_as_mode = false;
+
 
 unsigned long buzzerStartMillis = 0;
 int buzzerState = 0;
@@ -98,8 +121,7 @@ static const BaseType_t pro_cpu = 0;
 static const BaseType_t app_cpu = 1;
 void periodicClear()
 {
-
-  tft.fillRect(5, 90, 235, 250, BLACK);
+  display.clearDisplay();
 }
 
 void swap(int *a, int *b, byte c[], byte d[])
@@ -153,6 +175,8 @@ void setup()
   Serial.begin(115200);
   Serial2.begin(115200);
   delay(1000);
+  
+  
   SerialBT.begin();
   esp_log_level_set("*", ESP_LOG_ERROR);
   esp_log_level_set("heap_init", ESP_LOG_WARN);
@@ -166,7 +190,7 @@ void setup()
 
   Serial.println("Bluetooth Started! Ready to pair...");
 
-  pinMode(buzPin, OUTPUT);
+ 
   pinMode(potPin, INPUT);
 
   pinMode(b1pin, INPUT_PULLUP);
@@ -176,51 +200,71 @@ void setup()
 
   pinMode(batPin, INPUT);
 
+  ledcSetup(buzChannel, FREQ, RESOLUTION);
+  ledcAttachPin(buzPin, buzChannel);
+
   // attach the channel to the GPIO to be controlled
 
   /* TFT */
-  tft.init();
-  // uint16_t identifier = tft.readID();
-  tft.begin();
-  tft.setRotation(2);
-  tft.fillScreen(WHITE);
-  tft.setCursor(30, 120);
-  tft.setTextSize(10);
-  tft.setTextColor(LIGHT_BLUE);
-  tft.print("SGL");
-  delay(3000);
-  tft.fillScreen(BLACK);
-  modee();
+  // tft.init();
+  // // uint16_t identifier = tft.readID();
+  // tft.begin();
+  // tft.setRotation(2);
+  // tft.fillScreen(WHITE);
+  // tft.setCursor(30, 120);
+  // tft.setTextSize(10);
+  // tft.setTextColor(LIGHT_BLUE);
+  // tft.print("SGL");
+  // delay(3000);
+  // tft.fillScreen(BLACK);
+  // modee();
 
-  tft.setCursor(90, 4);
-  tft.setTextSize(3);
-  tft.setTextColor(CYANN);
-  tft.print("SGL");
+  // tft.setCursor(90, 4);
+  // tft.setTextSize(3);
+  // tft.setTextColor(CYANN);
+  // tft.print("SGL");
 
   last_millis_for_printing = millis();
 
-  digitalWrite(buzPin, LOW);
+  ledcWrite(buzChannel, LOW);
   delay(2000);
-  digitalWrite(buzPin, HIGH);
+  ledcWrite(buzChannel, 128);
   delay(100);
-  digitalWrite(buzPin, LOW);
+  ledcWrite(buzChannel, LOW);
   delay(100);
-  digitalWrite(buzPin, HIGH);
+  ledcWrite(buzChannel, 128);
   delay(100);
-  digitalWrite(buzPin, LOW);
+  ledcWrite(buzChannel, LOW);
   delay(100);
 
   while (!Serial)
   {
-    digitalWrite(buzPin, HIGH);
+    ledcWrite(buzChannel, 128);
   }
 
-  Serial.println("Serial Monitor started");
+  if(!display.begin(SSD1306_SWITCHCAPVCC)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    for(;;){
+      ledcWrite(buzChannel, 128);
+    } // Don't proceed, loop forever
+  }
+
+  display.display();
+
+
+  // Draw a single pixel in white
+
   while (!Serial2)
   {
-    digitalWrite(buzPin, HIGH);
+    ledcWrite(buzChannel, 128);
   }
   delay_buz = change_delay(-1);
+
+  display.clearDisplay();
+
+  drawWiFiBars(0,0, 2);
+  drawBatteryLevel(25, 50,3.7);
+  display.display();
 }
 
 void loop()
@@ -233,7 +277,7 @@ void loop()
     b2_pin_as_mode = false;
     mode = 1;
     periodicClear();
-    tft.fillRect(50, 10, 10, 12, BLACK);
+    // display.clearDisplay();
     modee();
     upper_range = 30;
     lower_range = 70;
@@ -246,7 +290,7 @@ void loop()
     b2_pin_as_mode = false;
     mode = 2;
     periodicClear();
-    tft.fillRect(50, 10, 10, 12, BLACK);
+    // tft.fillRect(50, 10, 10, 12, BLACK);
     modee();
     upper_range = 45;
     lower_range = 70;
@@ -257,26 +301,26 @@ void loop()
     b2_pin_as_mode = false;
     b2_pin_as_mode = true;
     b2_pin_as_mode = false;
-    tft.fillRect(50, 10, 10, 10, BLACK);
+    // tft.fillRect(50, 10, 10, 10, BLACK);
     periodicClear();
     mode = 3;
-    tft.fillRect(50, 10, 10, 12, BLACK);
+    // tft.fillRect(50, 10, 10, 12, BLACK);
     modee();
     upper_range = 60;
     lower_range = 70;
   }
 
-  else if (digitalRead(b4pin) == 0)
-  {
-    b1_pin_as_mode = false;
-    b2_pin_as_mode = false;
-    b2_pin_as_mode = false;
-    b2_pin_as_mode = true;
-    tft.fillRect(50, 10, 10, 12, BLACK);
-    periodicClear();
-    mode = 4;
-    modee();
-  }
+  // else if (digitalRead(b4pin) == 0)
+  // {
+  //   b1_pin_as_mode = false;
+  //   b2_pin_as_mode = false;
+  //   b2_pin_as_mode = false;
+  //   b2_pin_as_mode = true;
+  //   tft.fillRect(50, 10, 10, 12, BLACK);
+  //   periodicClear();
+  //   mode = 4;
+  //   modee();
+  // }
 
   while (Serial2.available() > 0)
   {
@@ -372,7 +416,7 @@ void loop()
               char buf[100];
               sprintf(buf, "02X%02X%02X", epc[i][10], epc[i][11], epc[i][12]);
               char *buf_temp = buf;
-              tft.fillRect(5, 90 + i * 30, 220, 25, BLACK);
+              //==> tft.fillRect(5, 90 + i * 30, 220, 25, BLACK);
               Serial.print("RSSI right now.. ");
               Serial.println(rssi_int[i]);
               int rssi_for_print_in_tft = map(rssi_int[i], upper_range, lower_range, 4, 1);
@@ -384,7 +428,7 @@ void loop()
 
                 if (rssi_for_print_in_tft == 4)
                 {
-                  digitalWrite(buzPin, HIGH);
+                  ledcWrite(buzChannel, 128);
                   do_not_buz = true;
                 }
                 else
@@ -411,14 +455,14 @@ void loop()
 
     if (buzzerState == 0 && millis() - buzzerEndMillis >= delay_buz)
     {
-      digitalWrite(buzPin, HIGH);
+      ledcWrite(buzChannel, 128);
       buzzerState = 1;
       buzzerStartMillis = millis();
     }
 
     if (buzzerState == 1 && millis() - buzzerStartMillis >= temp_delay_buz)
     {
-      digitalWrite(buzPin, LOW);
+      ledcWrite(buzChannel, LOW);
       buzzerState = 0;
       buzzerEndMillis = millis();
       delay_buz = change_delay(-1);
@@ -427,7 +471,7 @@ void loop()
 
   else if (do_not_buz == false)
   {
-    digitalWrite(buzPin, LOW);
+    ledcWrite(buzChannel, LOW);
     buzzerState = 0;
   }
 
@@ -477,46 +521,71 @@ int change_delay(int intensity)
 
 void inputs(char message[], int number, int strength) // number = number of box we want to print at screen , strength = signal strength of wifi
 {
-  tft.fillRect(5, 90 + number * 30, 220, 25, BLACK);
-  tft.drawRect(5, 90 + number * 30, 220, 25, LIGHT_PINK); // to print UID string rect 1
-  tft.setCursor(10, 95 + number * 30);
-  tft.setTextColor(CYAN);
-  tft.setTextSize(2);
-  tft.print(message);
+  // tft.fillRect(5, 90 + number * 30, 220, 25, BLACK);
+  // tft.drawRect(5, 90 + number * 30, 220, 25, LIGHT_PINK); // to print UID string rect 1
+  // tft.setCursor(10, 95 + number * 30);
+  // tft.setTextColor(CYAN);
+  // tft.setTextSize(2);
+  // tft.print(message);
 
-  switch (strength)
-  {
-  case 1: // to create 1 bar of wifi signal
-    wifi(0, 0, number);
-    break;
-  case 2: // to create 2 bars
-    wifi(0, 0, number);
-    wifi(1, 1, number);
-    break;
-  case 3: // to create 3 bars
-    wifi(0, 0, number);
-    wifi(1, 1, number);
-    wifi(2, 2, number);
-    break;
-  case 4: // to create 4 bars
-    wifi(0, 0, number);
-    wifi(1, 1, number);
-    wifi(2, 2, number);
-    wifi(3, 3, number);
-    break;
-  default:
-    wifi(0, 0, number);
-    break;
+  // switch (strength)
+  // {
+  // case 1: // to create 1 bar of wifi signal
+  //   wifi(0, 0, number);
+  //   break;
+  // case 2: // to create 2 bars
+  //   wifi(0, 0, number);
+  //   wifi(1, 1, number);
+  //   break;
+  // case 3: // to create 3 bars
+  //   wifi(0, 0, number);
+  //   wifi(1, 1, number);
+  //   wifi(2, 2, number);
+  //   break;
+  // case 4: // to create 4 bars
+  //   wifi(0, 0, number);
+  //   wifi(1, 1, number);
+  //   wifi(2, 2, number);
+  //   wifi(3, 3, number);
+  //   break;
+  // default:
+  //   wifi(0, 0, number);
+  //   break;
+  // }
+}
+
+void drawWiFiBars(int x, int y, int signal) {
+  // Fixed width and height of each bar
+  const int BAR_WIDTH = 4;
+  const int BAR_HEIGHT = 2;
+
+  // Draw the bars
+  for (int i = 0; i < 4; i++) {
+    int numBars = i + 1;
+    int barX = x + i * (BAR_WIDTH + 1);
+    int barY = y + BAR_HEIGHT * 3;
+    if (signal >= numBars) {
+      display.fillRect(barX, barY - (numBars - 1) * BAR_HEIGHT, BAR_WIDTH, numBars * BAR_HEIGHT, WHITE);
+    } else {
+      display.drawRect(barX, barY - (numBars - 1) * BAR_HEIGHT, BAR_WIDTH, numBars * BAR_HEIGHT, WHITE);
+    }
   }
 }
 
-void wifi(int x, int y, int number)
-{
-  tft.drawRect(180 + 10 * x, 104 - 4 * y + number * 30, 8, 8 + 4 * x, BLACK);
-  tft.fillRect(180 + 10 * x, 104 - 4 * y + number * 30, 8, 8 + 4 * x, BLACK);
+void drawBatteryLevel(int x, int y, float voltage) {
+  const int BAR_SPACING = 3;
+  const int BAR_MAX_WIDTH = 50 - (BAR_SPACING * 2);
+  
+  // Calculate the battery level as a percentage
+  int level = map(voltage, 0, 4.2, 0, 100);
+  
+  // Calculate the width of the filled bar
+  int filledWidth = map(level, 0, 100, 0, BAR_MAX_WIDTH);
+  
+  // Draw the battery icon
+  display.drawRect(x, y, 50, 10, WHITE);
+  display.fillRect(x + BAR_SPACING, y + BAR_SPACING, filledWidth, 10 - (BAR_SPACING * 2), WHITE);
 
-  tft.drawRect(180 + 10 * x, 104 - 4 * y + number * 30, 8, 8 + 4 * x, WHITE);
-  tft.fillRect(180 + 10 * x, 104 - 4 * y + number * 30, 8, 8 + 4 * x, WHITE);
 }
 
 void batteryDraw(int analog_value)
@@ -531,36 +600,36 @@ void batteryDraw(int analog_value)
 
   if (percentage <= 25)
   {
-    tft.drawRect(190, 0, 50, 30, WHITE);
-    tft.fillRect(battery_x, 2, drawValue, 25, RED);
-    tft.drawRect(180, 9, 10, 10, WHITE);
-    tft.fillRect(180, 9, 10, 10, WHITE);
+    // tft.drawRect(190, 0, 50, 30, WHITE);
+    // tft.fillRect(battery_x, 2, drawValue, 25, RED);
+    // tft.drawRect(180, 9, 10, 10, WHITE);
+    // tft.fillRect(180, 9, 10, 10, WHITE);
   }
   else if (percentage == 100)
   {
-    tft.drawRect(190, 0, 50, 30, WHITE);
-    tft.fillRect(battery_x, 2, drawValue, 25, PINK);
-    tft.drawRect(180, 9, 10, 10, WHITE);
-    tft.fillRect(180, 9, 10, 10, WHITE);
+    // tft.drawRect(190, 0, 50, 30, WHITE);
+    // tft.fillRect(battery_x, 2, drawValue, 25, PINK);
+    // tft.drawRect(180, 9, 10, 10, WHITE);
+    // tft.fillRect(180, 9, 10, 10, WHITE);
   }
   else
   {
-    tft.drawRect(190, 0, 50, 30, WHITE);
-    tft.fillRect(battery_x, 2, drawValue, 25, GREEN);
-    tft.drawRect(180, 9, 10, 10, WHITE);
-    tft.fillRect(180, 9, 10, 10, WHITE);
+    // tft.drawRect(190, 0, 50, 30, WHITE);
+    // tft.fillRect(battery_x, 2, drawValue, 25, GREEN);
+    // tft.drawRect(180, 9, 10, 10, WHITE);
+    // tft.fillRect(180, 9, 10, 10, WHITE);
   }
 }
 
 void modee()
 {
-  tft.setCursor(0, 10);
-  tft.setTextColor(LIGHT_PINK);
-  tft.setTextSize(2.8);
-  tft.print("MODE");
-  tft.drawRect(4, 34, 225, 40, MAGENTA);
-  tft.setCursor(50, 10);
-  tft.setTextColor(WHITE);
-  tft.setTextSize(2.8);
-  tft.print(String(mode));
+  // tft.setCursor(0, 10);
+  // tft.setTextColor(LIGHT_PINK);
+  // tft.setTextSize(2.8);
+  // tft.print("MODE");
+  // tft.drawRect(4, 34, 225, 40, MAGENTA);
+  // tft.setCursor(50, 10);
+  // tft.setTextColor(WHITE);
+  // tft.setTextSize(2.8);
+  // tft.print(String(mode));
 }

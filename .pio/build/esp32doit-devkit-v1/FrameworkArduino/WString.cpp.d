@@ -10,6 +10,7 @@
  /home/parthishere/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/xtensa/include/xtensa/hal.h \
  /home/parthishere/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/xtensa/esp32/include/xtensa/config/core.h \
  /home/parthishere/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/xtensa/include/xtensa/xtensa-versions.h \
+ /home/parthishere/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/xtensa/esp32/include/xtensa/config/core-isa.h \
  /home/parthishere/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/xtensa/esp32/include/xtensa/config/core-matmap.h \
  /home/parthishere/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/xtensa/esp32/include/xtensa/config/tie.h \
  /home/parthishere/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/xtensa/esp32/include/xtensa/config/system.h \
@@ -28,6 +29,7 @@
  /home/parthishere/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/xtensa/esp32/include/xtensa/config/specreg.h \
  /home/parthishere/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/xtensa/include/xtensa/xtruntime-core-state.h \
  /home/parthishere/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/xtensa/include/xt_instr_macros.h \
+ /home/parthishere/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/xtensa/include/xtensa/xtruntime.h \
  /home/parthishere/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/esp_hw_support/include/soc/spinlock.h \
  /home/parthishere/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/esp_hw_support/include/soc/cpu.h \
  /home/parthishere/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/esp_hw_support/include/esp_cpu.h \
@@ -121,6 +123,7 @@
  /home/parthishere/.platformio/packages/framework-arduinoespressif32/cores/esp32/HardwareSerial.h \
  /home/parthishere/.platformio/packages/framework-arduinoespressif32/cores/esp32/HWCDC.h \
  /home/parthishere/.platformio/packages/framework-arduinoespressif32/cores/esp32/Esp.h \
+ /home/parthishere/.platformio/packages/framework-arduinoespressif32/cores/esp32/Arduino.h \
  /home/parthishere/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/spi_flash/include/esp_partition.h \
  /home/parthishere/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/spi_flash/include/esp_flash.h \
  /home/parthishere/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/hal/include/hal/spi_flash_types.h \

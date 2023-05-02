@@ -9,6 +9,7 @@
  /home/parthishere/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/xtensa/include/xtensa/hal.h \
  /home/parthishere/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/xtensa/esp32/include/xtensa/config/core.h \
  /home/parthishere/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/xtensa/include/xtensa/xtensa-versions.h \
+ /home/parthishere/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/xtensa/esp32/include/xtensa/config/core-isa.h \
  /home/parthishere/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/xtensa/esp32/include/xtensa/config/core-matmap.h \
  /home/parthishere/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/xtensa/esp32/include/xtensa/config/tie.h \
  /home/parthishere/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/xtensa/esp32/include/xtensa/config/system.h \
@@ -27,6 +28,7 @@
  /home/parthishere/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/xtensa/esp32/include/xtensa/config/specreg.h \
  /home/parthishere/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/xtensa/include/xtensa/xtruntime-core-state.h \
  /home/parthishere/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/xtensa/include/xt_instr_macros.h \
+ /home/parthishere/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/xtensa/include/xtensa/xtruntime.h \
  /home/parthishere/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/esp_hw_support/include/soc/spinlock.h \
  /home/parthishere/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/esp_hw_support/include/soc/cpu.h \
  /home/parthishere/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/include/esp_hw_support/include/esp_cpu.h \
@@ -228,4 +230,11 @@
  .pio/libdeps/esp32doit-devkit-v1/TFT_eSPI/Extensions/Smooth_font.h \
  .pio/libdeps/esp32doit-devkit-v1/TFT_eSPI/Extensions/Button.h \
  .pio/libdeps/esp32doit-devkit-v1/TFT_eSPI/Extensions/Sprite.h \
- /home/parthishere/.platformio/packages/framework-arduinoespressif32/libraries/Ticker/src/Ticker.h
+ /home/parthishere/.platformio/packages/framework-arduinoespressif32/libraries/Ticker/src/Ticker.h \
+ /home/parthishere/.platformio/packages/framework-arduinoespressif32/libraries/Wire/src/Wire.h \
+ /home/parthishere/.platformio/packages/framework-arduinoespressif32/cores/esp32/esp32-hal.h \
+ .pio/libdeps/esp32doit-devkit-v1/Adafruit\ GFX\ Library/Adafruit_GFX.h \
+ .pio/libdeps/esp32doit-devkit-v1/Adafruit\ GFX\ Library/gfxfont.h \
+ .pio/libdeps/esp32doit-devkit-v1/Adafruit\ BusIO/Adafruit_I2CDevice.h \
+ .pio/libdeps/esp32doit-devkit-v1/Adafruit\ BusIO/Adafruit_SPIDevice.h \
+ .pio/libdeps/esp32doit-devkit-v1/Adafruit\ SSD1306/Adafruit_SSD1306.h
