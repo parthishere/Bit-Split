@@ -560,10 +560,10 @@ void drawWiFiBars(int x, int y, int signal) {
   const int BAR_HEIGHT = 2;
 
   // Draw the bars
-  for (int i = 0; i < 4; i++) {
+  for (int i = 0; i < 5; i++) {
     int numBars = i + 1;
     int barX = x + i * (BAR_WIDTH + 1);
-    int barY = y + BAR_HEIGHT * 3;
+    int barY = y + BAR_HEIGHT * 4;
     if (signal >= numBars) {
       display.fillRect(barX, barY - (numBars - 1) * BAR_HEIGHT, BAR_WIDTH, numBars * BAR_HEIGHT, WHITE);
     } else {
@@ -585,6 +585,7 @@ void drawBatteryLevel(int x, int y, float voltage) {
   // Draw the battery icon
   display.drawRect(x, y, 25, 10, WHITE);
   display.fillRect(x + BAR_SPACING, y + BAR_SPACING, filledWidth, 10 - (BAR_SPACING * 2), WHITE);
+  display.fillRect(x+25, y+3, 3, 3,WHITE);
 
 }
 
