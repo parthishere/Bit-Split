@@ -262,8 +262,11 @@ void setup()
 
   display.clearDisplay();
 
-  drawWiFiBars(0,0, 2);
-  drawBatteryLevel(25, 50,3.7);
+  // drawWiFiBars(0,0, 2);
+  // drawBatteryLevel(25, 50,3.7);
+  inputs("heya", 1, 2);
+  inputs("heya", 2, 2);
+  inputs("heya", 3, 2);
   display.display();
 }
 
@@ -519,39 +522,43 @@ int change_delay(int intensity)
   }
 }
 
-void inputs(char message[], int number, int strength) // number = number of box we want to print at screen , strength = signal strength of wifi
+void inputs(char message[], int index, int strength) // number = number of box we want to print at screen , strength = signal strength of wifi
 {
-  // tft.fillRect(5, 90 + number * 30, 220, 25, BLACK);
-  // tft.drawRect(5, 90 + number * 30, 220, 25, LIGHT_PINK); // to print UID string rect 1
-  // tft.setCursor(10, 95 + number * 30);
-  // tft.setTextColor(CYAN);
-  // tft.setTextSize(2);
-  // tft.print(message);
-
-  // switch (strength)
-  // {
-  // case 1: // to create 1 bar of wifi signal
-  //   wifi(0, 0, number);
-  //   break;
-  // case 2: // to create 2 bars
-  //   wifi(0, 0, number);
-  //   wifi(1, 1, number);
-  //   break;
-  // case 3: // to create 3 bars
-  //   wifi(0, 0, number);
-  //   wifi(1, 1, number);
-  //   wifi(2, 2, number);
-  //   break;
-  // case 4: // to create 4 bars
-  //   wifi(0, 0, number);
-  //   wifi(1, 1, number);
-  //   wifi(2, 2, number);
-  //   wifi(3, 3, number);
-  //   break;
-  // default:
-  //   wifi(0, 0, number);
-  //   break;
-  // }
+  
+  const int MESSAGE_WIDTH = 128;
+  const int MESSAGE_HEIGHT = 16;
+  const int MESSAGE_SPACING = 5;
+  const int WIFI_WIDTH = 20;
+  const int WIFI_HEIGHT = 10;
+  
+  // Calculate the x and y coordinates of the message and wifi icon
+  int x = 0;
+  int y = 0;
+  switch (index) {
+    case 1:
+      x = 0;
+      y = 0;
+      break;
+    case 2:
+      x = 0;
+      y = MESSAGE_HEIGHT + MESSAGE_SPACING;
+      break;
+    case 3:
+      x = 0;
+      y = (MESSAGE_HEIGHT * 2) + (MESSAGE_SPACING * 2);
+      break;
+    default:
+      break;
+  }
+  
+  // Draw the wifi signal strength icon
+  drawWiFiBars(MESSAGE_WIDTH - WIFI_WIDTH, y, strength);
+  
+  // Draw the message text
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(x, y);
+  display.print(message);
 }
 
 void drawWiFiBars(int x, int y, int signal) {
@@ -585,7 +592,7 @@ void drawBatteryLevel(int x, int y, float voltage) {
   // Draw the battery icon
   display.drawRect(x, y, 25, 10, WHITE);
   display.fillRect(x + BAR_SPACING, y + BAR_SPACING, filledWidth, 10 - (BAR_SPACING * 2), WHITE);
-  display.fillRect(x+25, y+3, 3, 3,WHITE);
+  display.fillRect(x+25, y+3, 3, 4,WHITE);
 
 }
 
