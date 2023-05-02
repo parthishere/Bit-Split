@@ -264,9 +264,8 @@ void setup()
 
   // drawWiFiBars(0,0, 2);
   // drawBatteryLevel(25, 50,3.7);
-  inputs("heya", 1, 2);
-  inputs("heya", 2, 2);
-  inputs("heya", 3, 2);
+  modee();
+  
   display.display();
 }
 
@@ -525,46 +524,50 @@ int change_delay(int intensity)
 void inputs(char message[], int index, int strength) // number = number of box we want to print at screen , strength = signal strength of wifi
 {
   
-  const int MESSAGE_WIDTH = 128;
-  const int MESSAGE_HEIGHT = 16;
-  const int MESSAGE_SPACING = 5;
+  const int MESSAGE_WIDTH = 126;
+  const int MESSAGE_HEIGHT = 15;
+  const int MESSAGE_SPACING = 2;
   const int WIFI_WIDTH = 20;
   const int WIFI_HEIGHT = 10;
   
   // Calculate the x and y coordinates of the message and wifi icon
-  int x = 0;
-  int y = 0;
+  int x = 1;
+  int y = 17;
   switch (index) {
     case 1:
-      x = 0;
-      y = 0;
+      x = 1;
+      y = 17;
       break;
     case 2:
-      x = 0;
-      y = MESSAGE_HEIGHT + MESSAGE_SPACING;
+      x = 1;
+      y = 17 + MESSAGE_HEIGHT + MESSAGE_SPACING;
       break;
     case 3:
-      x = 0;
-      y = (MESSAGE_HEIGHT * 2) + (MESSAGE_SPACING * 2);
+      x = 1;
+      y = 17 + (MESSAGE_HEIGHT * 2) + (MESSAGE_SPACING * 2);
       break;
     default:
       break;
   }
   
   // Draw the wifi signal strength icon
-  drawWiFiBars(MESSAGE_WIDTH - WIFI_WIDTH, y, strength);
+  drawWiFiBars(MESSAGE_WIDTH - WIFI_WIDTH - 5 - 1, y, strength);
   
   // Draw the message text
   display.setTextSize(1);
   display.setTextColor(WHITE);
   display.setCursor(x, y);
   display.print(message);
+  display.display();
 }
 
 void drawWiFiBars(int x, int y, int signal) {
+
   // Fixed width and height of each bar
   const int BAR_WIDTH = 4;
   const int BAR_HEIGHT = 2;
+
+  display.fillRect(x, y, 4*5 + 4, 10, BLACK);
 
   // Draw the bars
   for (int i = 0; i < 5; i++) {
@@ -577,12 +580,14 @@ void drawWiFiBars(int x, int y, int signal) {
       display.drawRect(barX, barY - (numBars - 1) * BAR_HEIGHT, BAR_WIDTH, numBars * BAR_HEIGHT, WHITE);
     }
   }
+  display.display();
 }
 
 void drawBatteryLevel(int x, int y, float voltage) {
   const int BAR_SPACING = 2;
   const int BAR_MAX_WIDTH = 25 - (BAR_SPACING * 2);
-  
+  display.fillRect(x, y, 25+3, 10, BLACK);
+
   // Calculate the battery level as a percentage
   int level = map(voltage, 0, 4.2, 0, 100);
   
@@ -593,44 +598,55 @@ void drawBatteryLevel(int x, int y, float voltage) {
   display.drawRect(x, y, 25, 10, WHITE);
   display.fillRect(x + BAR_SPACING, y + BAR_SPACING, filledWidth, 10 - (BAR_SPACING * 2), WHITE);
   display.fillRect(x+25, y+3, 3, 4,WHITE);
-
+  display.display();
 }
 
-void batteryDraw(int analog_value)
-{
+// void batteryDraw(int analog_value)
+// {
 
-  int percentage{map(analog_value, 0, 4095, 0, 100)};
-  Serial.print("PErcentage ");
-  Serial.println(percentage);
-  Serial.println("charging process is not going on ");
-  int drawValue = map(percentage, 0, 100, 0, 50);
-  int battery_x = 190 + (50 - (percentage * 50 / 100));
+//   int percentage{map(analog_value, 0, 4095, 0, 100)};
+//   Serial.print("PErcentage ");
+//   Serial.println(percentage);
+//   Serial.println("charging process is not going on ");
+//   int drawValue = map(percentage, 0, 100, 0, 50);
+//   int battery_x = 190 + (50 - (percentage * 50 / 100));
 
-  if (percentage <= 25)
-  {
-    // tft.drawRect(190, 0, 50, 30, WHITE);
-    // tft.fillRect(battery_x, 2, drawValue, 25, RED);
-    // tft.drawRect(180, 9, 10, 10, WHITE);
-    // tft.fillRect(180, 9, 10, 10, WHITE);
-  }
-  else if (percentage == 100)
-  {
-    // tft.drawRect(190, 0, 50, 30, WHITE);
-    // tft.fillRect(battery_x, 2, drawValue, 25, PINK);
-    // tft.drawRect(180, 9, 10, 10, WHITE);
-    // tft.fillRect(180, 9, 10, 10, WHITE);
-  }
-  else
-  {
-    // tft.drawRect(190, 0, 50, 30, WHITE);
-    // tft.fillRect(battery_x, 2, drawValue, 25, GREEN);
-    // tft.drawRect(180, 9, 10, 10, WHITE);
-    // tft.fillRect(180, 9, 10, 10, WHITE);
-  }
-}
+//   if (percentage <= 25)
+//   {
+//     // tft.drawRect(190, 0, 50, 30, WHITE);
+//     // tft.fillRect(battery_x, 2, drawValue, 25, RED);
+//     // tft.drawRect(180, 9, 10, 10, WHITE);
+//     // tft.fillRect(180, 9, 10, 10, WHITE);
+//   }
+//   else if (percentage == 100)
+//   {
+//     // tft.drawRect(190, 0, 50, 30, WHITE);
+//     // tft.fillRect(battery_x, 2, drawValue, 25, PINK);
+//     // tft.drawRect(180, 9, 10, 10, WHITE);
+//     // tft.fillRect(180, 9, 10, 10, WHITE);
+//   }
+//   else
+//   {
+//     // tft.drawRect(190, 0, 50, 30, WHITE);
+//     // tft.fillRect(battery_x, 2, drawValue, 25, GREEN);
+//     // tft.drawRect(180, 9, 10, 10, WHITE);
+//     // tft.fillRect(180, 9, 10, 10, WHITE);
+//   }
+// }
 
 void modee()
 {
+  
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(0, 0);
+  display.print("MODE : ");
+  display.print(String(mode));
+  display.drawLine(0, 13, 128, 13, WHITE);
+  
+
+  drawBatteryLevel(96, 0, (analogRead(potPin)/4095)*100);
+  display.display();
   // tft.setCursor(0, 10);
   // tft.setTextColor(LIGHT_PINK);
   // tft.setTextSize(2.8);
