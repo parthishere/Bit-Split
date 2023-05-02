@@ -3,7 +3,7 @@
 #include "BluetoothSerial.h"
 #include "esp_system.h"
 
-#include <TFT_eSPI.h> // Hardware-specific library
+// #include <TFT_eSPI.h> // Hardware-specific library
 #include <SPI.h>
 
 #include <Ticker.h>
