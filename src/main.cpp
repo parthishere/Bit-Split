@@ -3,7 +3,7 @@
 #include "BluetoothSerial.h"
 #include "esp_system.h"
 
-// #include <TFT_eSPI.h> // Hardware-specific library
+#include <TFT_eSPI.h> // Hardware-specific library
 #include <SPI.h>
 
 #include <Ticker.h>
@@ -573,8 +573,8 @@ void drawWiFiBars(int x, int y, int signal) {
 }
 
 void drawBatteryLevel(int x, int y, float voltage) {
-  const int BAR_SPACING = 3;
-  const int BAR_MAX_WIDTH = 50 - (BAR_SPACING * 2);
+  const int BAR_SPACING = 2;
+  const int BAR_MAX_WIDTH = 25 - (BAR_SPACING * 2);
   
   // Calculate the battery level as a percentage
   int level = map(voltage, 0, 4.2, 0, 100);
@@ -583,7 +583,7 @@ void drawBatteryLevel(int x, int y, float voltage) {
   int filledWidth = map(level, 0, 100, 0, BAR_MAX_WIDTH);
   
   // Draw the battery icon
-  display.drawRect(x, y, 50, 10, WHITE);
+  display.drawRect(x, y, 25, 10, WHITE);
   display.fillRect(x + BAR_SPACING, y + BAR_SPACING, filledWidth, 10 - (BAR_SPACING * 2), WHITE);
 
 }
