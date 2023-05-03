@@ -599,9 +599,8 @@ void ui(char *message, int index, int strength) // number = number of box we wan
   display.print("MODE : ");
   display.print(String(mode));
   display.drawLine(0, 13, 128, 13, WHITE);
-
+  display.display();
   drawBatteryLevel(96, 0, analogRead(potPin));
-  display.fillRect(1, 17, 128 - 1, 64 - 17, BLACK);
 
   const int MESSAGE_WIDTH = 126;
   const int MESSAGE_HEIGHT = 15;
@@ -609,6 +608,7 @@ void ui(char *message, int index, int strength) // number = number of box we wan
   const int WIFI_WIDTH = 20;
   const int WIFI_HEIGHT = 10;
 
+  display.fillRect(1, 17, 128-1, (index+1)*(MESSAGE_HEIGHT+MESSAGE_SPACING)+17, BLACK);
   // Calculate the x and y coordinates of the message and wifi icon
   int x = 1;
   int y = 17;
@@ -693,6 +693,7 @@ void modee()
 {
   display.setTextSize(1);
   display.setTextColor(WHITE);
+  display.fillRect(0,0, 64, 12, BLACK);
   display.setCursor(0, 0);
   display.print("MODE : ");
   display.print(String(mode));
