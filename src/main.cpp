@@ -122,7 +122,8 @@ static const BaseType_t pro_cpu = 0;
 static const BaseType_t app_cpu = 1;
 void periodicClear()
 {
-  display.clearDisplay();
+  display.fillRect(1, 17, 128-1, 64-17, BLACK);
+  display.display();
 }
 
 void swap(int *a, int *b, byte c[], byte d[])
@@ -332,7 +333,6 @@ void loop()
     b2_pin_as_mode = false;
     b2_pin_as_mode = false;
     mode = 1;
-    periodicClear();
     // display.clearDisplay();
     modee();
     upper_range = 30;
@@ -345,7 +345,6 @@ void loop()
     b2_pin_as_mode = false;
     b2_pin_as_mode = false;
     mode = 2;
-    periodicClear();
     // tft.fillRect(50, 10, 10, 12, BLACK);
     modee();
     upper_range = 45;
@@ -358,7 +357,6 @@ void loop()
     b2_pin_as_mode = true;
     b2_pin_as_mode = false;
     // tft.fillRect(50, 10, 10, 10, BLACK);
-    periodicClear();
     mode = 3;
     // tft.fillRect(50, 10, 10, 12, BLACK);
     modee();
@@ -366,17 +364,6 @@ void loop()
     lower_range = 70;
   }
 
-  // else if (digitalRead(b4pin) == 0)
-  // {
-  //   b1_pin_as_mode = false;
-  //   b2_pin_as_mode = false;
-  //   b2_pin_as_mode = false;
-  //   b2_pin_as_mode = true;
-  //   tft.fillRect(50, 10, 10, 12, BLACK);
-  //   periodicClear();
-  //   mode = 4;
-  //   modee();
-  // }
 
   while (Serial2.available() > 0)
   {
@@ -559,8 +546,9 @@ void loop()
     buzzerState = 0;
   }
 
-  if ((millis() - last_millis_to_on > 4000))
+  if ((millis() - last_millis_to_on > 5000))
   {
+    Serial.println("will clear the display");
     periodicClear();
     last_millis_to_on = millis();
   }
