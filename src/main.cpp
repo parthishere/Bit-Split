@@ -64,7 +64,9 @@ int buzPin = 32, potPin = 34, b1pin = 27, b2pin = 26, b3pin = 25, b4pin = 33, ba
 const char message[] = "card detail";
 int charge_length = 50, is_charging;
 
-void inputs(char *message, int number, int strength);
+
+void ui(char *message = nullptr, int index = -1, int strength = -1);
+
 void drawWiFiBars(int x, int y, int signal);
 void drawBatteryLevel(int x, int y, float adc_value);
 void batteryDraw(int analog_value);
@@ -72,7 +74,6 @@ void modee();
 void charge();
 
 int change_delay(int intensity);
-
 
 bool use_audio_jack = false;
 int count = 0, count_t = 0, totalpackets = 0;
@@ -229,7 +230,8 @@ void setup()
   {
     use_audio_jack = true;
   }
-  else{
+  else
+  {
     use_audio_jack = false;
   }
 
@@ -264,16 +266,19 @@ void setup()
   int count;
   byte buf[5] = {0x03, 0xf0, 0x02, 0x8b, 0x2f};
   Serial2.write(buf, 5);
-  while(!Serial2.available()){
-    count ++;
-    if (count>200){
+  while (!Serial2.available())
+  {
+    count++;
+    if (count > 200)
+    {
       ledcWrite(buzChannel, 128);
     }
     Serial.print(".");
   }
   Serial.println();
-  while(Serial2.available()){
-    Serial.printf("%02X",Serial2.read());
+  while (Serial2.available())
+  {
+    Serial.printf("%02X", Serial2.read());
   }
 
   while (!Serial)
@@ -309,17 +314,17 @@ void setup()
   display.display();
 }
 
-
 void loop()
 {
   if (digitalRead(jackIsConnectedPin) == 0)
   {
     use_audio_jack = true;
   }
-  else{
+  else
+  {
     use_audio_jack = false;
   }
-  
+
   if (digitalRead(b1pin) == 0)
   {
     b1_pin_as_mode = true;
@@ -470,8 +475,8 @@ void loop()
               //==> tft.fillRect(5, 90 + i * 30, 220, 25, BLACK);
               Serial.print("RSSI right now.. ");
               Serial.println(rssi_int[i]);
-              int rssi_for_print_in_tft = map(rssi_int[i], upper_range, lower_range, 5, 1);
-              inputs(buf_temp, i, rssi_for_print_in_tft);
+              int rssi_for_print_in_tft = map(rssi_int[i], upper_range, lower_range, 4, 1);
+              ui(buf_temp, i, rssi_for_print_in_tft);
               last_millis_for_printing = millis();
 
               if (i == 0)
@@ -598,8 +603,17 @@ int change_delay(int intensity)
   }
 }
 
-void inputs(char message[], int index, int strength) // number = number of box we want to print at screen , strength = signal strength of wifi
+void ui(char *message, int index, int strength) // number = number of box we want to print at screen , strength = signal strength of wifi
 {
+  display.setTextSize(1);
+  display.setTextColor(WHITE);
+  display.setCursor(0, 0);
+  display.print("MODE : ");
+  display.print(String(mode));
+  display.drawLine(0, 13, 128, 13, WHITE);
+
+  drawBatteryLevel(96, 0, analogRead(potPin));
+  display.fillRect(1, 17, 128 - 1, 64 - 17, BLACK);
 
   const int MESSAGE_WIDTH = 126;
   const int MESSAGE_HEIGHT = 15;
@@ -636,6 +650,7 @@ void inputs(char message[], int index, int strength) // number = number of box w
   display.setTextColor(WHITE);
   display.setCursor(x, y);
   display.print(message);
+
   display.display();
 }
 
@@ -646,14 +661,14 @@ void drawWiFiBars(int x, int y, int signal)
   const int BAR_WIDTH = 4;
   const int BAR_HEIGHT = 2;
 
-  display.fillRect(x, y, 4 * 5 + 4, 10, BLACK);
+  display.fillRect(x, y, 4 * 4 + 4, 10, BLACK);
 
   // Draw the bars
-  for (int i = 0; i < 5; i++)
+  for (int i = 0; i < 4; i++)
   {
     int numBars = i + 1;
     int barX = x + i * (BAR_WIDTH + 1);
-    int barY = y + BAR_HEIGHT * 4;
+    int barY = y + BAR_HEIGHT * 3;
     if (signal >= numBars)
     {
       display.fillRect(barX, barY - (numBars - 1) * BAR_HEIGHT, BAR_WIDTH, numBars * BAR_HEIGHT, WHITE);
@@ -685,63 +700,16 @@ void drawBatteryLevel(int x, int y, float adc_value)
   display.display();
 }
 
-// void batteryDraw(int analog_value)
-// {
-
-//   int percentage{map(analog_value, 0, 4095, 0, 100)};
-//   Serial.print("PErcentage ");
-//   Serial.println(percentage);
-//   Serial.println("charging process is not going on ");
-//   int drawValue = map(percentage, 0, 100, 0, 50);
-//   int battery_x = 190 + (50 - (percentage * 50 / 100));
-
-//   if (percentage <= 25)
-//   {
-//     // tft.drawRect(190, 0, 50, 30, WHITE);
-//     // tft.fillRect(battery_x, 2, drawValue, 25, RED);
-//     // tft.drawRect(180, 9, 10, 10, WHITE);
-//     // tft.fillRect(180, 9, 10, 10, WHITE);
-//   }
-//   else if (percentage == 100)
-//   {
-//     // tft.drawRect(190, 0, 50, 30, WHITE);
-//     // tft.fillRect(battery_x, 2, drawValue, 25, PINK);
-//     // tft.drawRect(180, 9, 10, 10, WHITE);
-//     // tft.fillRect(180, 9, 10, 10, WHITE);
-//   }
-//   else
-//   {
-//     // tft.drawRect(190, 0, 50, 30, WHITE);
-//     // tft.fillRect(battery_x, 2, drawValue, 25, GREEN);
-//     // tft.drawRect(180, 9, 10, 10, WHITE);
-//     // tft.fillRect(180, 9, 10, 10, WHITE);
-//   }
-// }
 
 void modee()
 {
-
   display.setTextSize(1);
   display.setTextColor(WHITE);
   display.setCursor(0, 0);
   display.print("MODE : ");
   display.print(String(mode));
   display.drawLine(0, 13, 128, 13, WHITE);
-  Serial.println("potentiometer value");
-  Serial.println(analogRead(potPin));
-  Serial.println("potentiometer value");
-  Serial.println(analogRead(potPin) / 4095);
-  Serial.println("potentiometer value");
-  Serial.println((analogRead(potPin) / 4095) * 100);
+
   drawBatteryLevel(96, 0, analogRead(potPin));
-  display.display();
-  // tft.setCursor(0, 10);
-  // tft.setTextColor(LIGHT_PINK);
-  // tft.setTextSize(2.8);
-  // tft.print("MODE");
-  // tft.drawRect(4, 34, 225, 40, MAGENTA);
-  // tft.setCursor(50, 10);
-  // tft.setTextColor(WHITE);
-  // tft.setTextSize(2.8);
-  // tft.print(String(mode));
+  display.fillRect(1, 17, 128 - 1, 64 - 17, BLACK);
 }
