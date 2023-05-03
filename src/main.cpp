@@ -64,7 +64,6 @@ int buzPin = 32, potPin = 34, b1pin = 27, b2pin = 26, b3pin = 25, b4pin = 33, ba
 const char message[] = "card detail";
 int charge_length = 50, is_charging;
 
-
 void ui(char *message = nullptr, int index = -1, int strength = -1);
 
 void drawWiFiBars(int x, int y, int signal);
@@ -122,7 +121,7 @@ static const BaseType_t pro_cpu = 0;
 static const BaseType_t app_cpu = 1;
 void periodicClear()
 {
-  display.fillRect(1, 17, 128-1, 64-17, BLACK);
+  display.fillRect(1, 17, 128 - 1, 64 - 17, BLACK);
   display.display();
 }
 
@@ -363,7 +362,6 @@ void loop()
     upper_range = 60;
     lower_range = 70;
   }
-
 
   while (Serial2.available() > 0)
   {
@@ -608,7 +606,7 @@ void ui(char *message, int index, int strength) // number = number of box we wan
   const int WIFI_WIDTH = 20;
   const int WIFI_HEIGHT = 10;
 
-  display.fillRect(1, 17, 128-1, (index+1)*(MESSAGE_HEIGHT+MESSAGE_SPACING)+17, BLACK);
+  display.fillRect(1, 17, 128 - 1, (index + 1) * (MESSAGE_HEIGHT + MESSAGE_SPACING) + 17, BLACK);
   // Calculate the x and y coordinates of the message and wifi icon
   int x = 1;
   int y = 17;
@@ -688,12 +686,11 @@ void drawBatteryLevel(int x, int y, float adc_value)
   display.display();
 }
 
-
 void modee()
 {
   display.setTextSize(1);
   display.setTextColor(WHITE);
-  display.fillRect(0,0, 64, 12, BLACK);
+  display.fillRect(0, 0, 64, 12, BLACK);
   display.setCursor(0, 0);
   display.print("MODE : ");
   display.print(String(mode));
