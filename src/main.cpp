@@ -9,7 +9,6 @@
 #include <Ticker.h>
 #include <list>
 
-
 #include <SPI.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
@@ -23,13 +22,13 @@
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
 
 // Declaration for SSD1306 display connected using software SPI (default case):
-#define OLED_MOSI   21
-#define OLED_CLK   22
-#define OLED_DC    5
-#define OLED_CS    19
+#define OLED_MOSI 21
+#define OLED_CLK 22
+#define OLED_DC 5
+#define OLED_CS 19
 #define OLED_RESET 4
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT,
-  OLED_MOSI, OLED_CLK, OLED_DC, OLED_RESET, OLED_CS);
+                         OLED_MOSI, OLED_CLK, OLED_DC, OLED_RESET, OLED_CS);
 
 // #define DEBUG 1
 
@@ -41,7 +40,7 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT,
 // #define debugln(x)
 // #endif
 
-int buzPin = 32, potPin = 34, b1pin = 27, b2pin = 26, b3pin = 25, b4pin = 33, batPin = 4, audioPin=33, jackIsConnectedPin = 35;
+int buzPin = 32, potPin = 34, b1pin = 27, b2pin = 26, b3pin = 25, b4pin = 33, batPin = 4, audioPin = 33, jackIsConnectedPin = 15;
 
 // #define LCD_CS A3 // Chip Select goes to Analog 3
 // #define LCD_CD A2 // Command/Data goes to Analog 2
@@ -66,14 +65,16 @@ const char message[] = "card detail";
 int charge_length = 50, is_charging;
 
 void inputs(char *message, int number, int strength);
-void drawWiFiBars(int x, int y, int signal) ;
-void drawBatteryLevel(int x, int y, float voltage);
+void drawWiFiBars(int x, int y, int signal);
+void drawBatteryLevel(int x, int y, float adc_value);
 void batteryDraw(int analog_value);
 void modee();
 void charge();
 
 int change_delay(int intensity);
 
+
+bool use_audio_jack = false;
 int count = 0, count_t = 0, totalpackets = 0;
 byte tdata[200];
 bool initial = true;
@@ -98,7 +99,6 @@ Ticker onceTicker;
 bool b1_pin_as_mode = false;
 bool b2_pin_as_mode = false;
 bool b3_pin_as_mode = false;
-
 
 unsigned long buzzerStartMillis = 0;
 int buzzerState = 0;
@@ -175,8 +175,7 @@ void setup()
   Serial.begin(115200);
   Serial2.begin(115200);
   delay(1000);
-  
-  
+
   SerialBT.begin();
   esp_log_level_set("*", ESP_LOG_ERROR);
   esp_log_level_set("heap_init", ESP_LOG_WARN);
@@ -190,14 +189,14 @@ void setup()
 
   Serial.println("Bluetooth Started! Ready to pair...");
 
- 
   pinMode(potPin, INPUT);
 
   pinMode(b1pin, INPUT_PULLUP);
   pinMode(b2pin, INPUT_PULLUP);
   pinMode(b3pin, INPUT_PULLUP);
   pinMode(b4pin, INPUT_PULLUP);
-
+  pinMode(jackIsConnectedPin, INPUT_PULLUP);
+  pinMode(audioPin, OUTPUT);
   pinMode(batPin, INPUT);
 
   ledcSetup(buzChannel, FREQ, RESOLUTION);
@@ -226,31 +225,72 @@ void setup()
 
   last_millis_for_printing = millis();
 
-  ledcWrite(buzChannel, LOW);
-  delay(2000);
-  ledcWrite(buzChannel, 128);
-  delay(100);
-  ledcWrite(buzChannel, LOW);
-  delay(100);
-  ledcWrite(buzChannel, 128);
-  delay(100);
-  ledcWrite(buzChannel, LOW);
-  delay(100);
+  if (digitalRead(jackIsConnectedPin) == 0)
+  {
+    use_audio_jack = true;
+  }
+  else{
+    use_audio_jack = false;
+  }
+
+  if (use_audio_jack == true)
+  {
+    Serial.println("wont buzz");
+    digitalWrite(audioPin, LOW);
+    delay(2000);
+    digitalWrite(audioPin, HIGH);
+    delay(100);
+    digitalWrite(audioPin, LOW);
+    delay(100);
+    digitalWrite(audioPin, HIGH);
+    delay(100);
+    digitalWrite(audioPin, LOW);
+    delay(100);
+  }
+  else
+  {
+    Serial.println("will buzz");
+    ledcWrite(buzChannel, LOW);
+    delay(2000);
+    ledcWrite(buzChannel, 128);
+    delay(100);
+    ledcWrite(buzChannel, LOW);
+    delay(100);
+    ledcWrite(buzChannel, 128);
+    delay(100);
+    ledcWrite(buzChannel, LOW);
+    delay(100);
+  }
+  int count;
+  byte buf[5] = {0x03, 0xf0, 0x02, 0x8b, 0x2f};
+  Serial2.write(buf, 5);
+  while(!Serial2.available()){
+    count ++;
+    if (count>200){
+      ledcWrite(buzChannel, 128);
+    }
+    Serial.print(".");
+  }
+  Serial.println();
+  while(Serial2.available()){
+    Serial.printf("%02X",Serial2.read());
+  }
 
   while (!Serial)
   {
     ledcWrite(buzChannel, 128);
   }
 
-  if(!display.begin(SSD1306_SWITCHCAPVCC)) {
+  if (!display.begin(SSD1306_SWITCHCAPVCC))
+  {
     Serial.println(F("SSD1306 allocation failed"));
-    for(;;){
+    for (;;)
+    {
       ledcWrite(buzChannel, 128);
     } // Don't proceed, loop forever
   }
 
   display.display();
-
 
   // Draw a single pixel in white
 
@@ -265,12 +305,21 @@ void setup()
   // drawWiFiBars(0,0, 2);
   // drawBatteryLevel(25, 50,3.7);
   modee();
-  
+
   display.display();
 }
 
+
 void loop()
 {
+  if (digitalRead(jackIsConnectedPin) == 0)
+  {
+    use_audio_jack = true;
+  }
+  else{
+    use_audio_jack = false;
+  }
+  
   if (digitalRead(b1pin) == 0)
   {
     b1_pin_as_mode = true;
@@ -421,7 +470,7 @@ void loop()
               //==> tft.fillRect(5, 90 + i * 30, 220, 25, BLACK);
               Serial.print("RSSI right now.. ");
               Serial.println(rssi_int[i]);
-              int rssi_for_print_in_tft = map(rssi_int[i], upper_range, lower_range, 4, 1);
+              int rssi_for_print_in_tft = map(rssi_int[i], upper_range, lower_range, 5, 1);
               inputs(buf_temp, i, rssi_for_print_in_tft);
               last_millis_for_printing = millis();
 
@@ -430,7 +479,14 @@ void loop()
 
                 if (rssi_for_print_in_tft == 4)
                 {
-                  ledcWrite(buzChannel, 128);
+                  if (use_audio_jack == true)
+                  {
+                    digitalWrite(audioPin, HIGH);
+                  }
+                  else
+                  {
+                    ledcWrite(buzChannel, 128);
+                  }
                   do_not_buz = true;
                 }
                 else
@@ -457,14 +513,28 @@ void loop()
 
     if (buzzerState == 0 && millis() - buzzerEndMillis >= delay_buz)
     {
-      ledcWrite(buzChannel, 128);
+      if (use_audio_jack == true)
+      {
+        digitalWrite(audioPin, HIGH);
+      }
+      else
+      {
+        ledcWrite(buzChannel, 128);
+      }
       buzzerState = 1;
       buzzerStartMillis = millis();
     }
 
     if (buzzerState == 1 && millis() - buzzerStartMillis >= temp_delay_buz)
     {
-      ledcWrite(buzChannel, LOW);
+      if (use_audio_jack == true)
+      {
+        digitalWrite(audioPin, LOW);
+      }
+      else
+      {
+        ledcWrite(buzChannel, LOW);
+      }
       buzzerState = 0;
       buzzerEndMillis = millis();
       delay_buz = change_delay(-1);
@@ -473,7 +543,14 @@ void loop()
 
   else if (do_not_buz == false)
   {
-    ledcWrite(buzChannel, LOW);
+    if (use_audio_jack == true)
+    {
+      digitalWrite(audioPin, LOW);
+    }
+    else
+    {
+      ledcWrite(buzChannel, LOW);
+    }
     buzzerState = 0;
   }
 
@@ -523,36 +600,37 @@ int change_delay(int intensity)
 
 void inputs(char message[], int index, int strength) // number = number of box we want to print at screen , strength = signal strength of wifi
 {
-  
+
   const int MESSAGE_WIDTH = 126;
   const int MESSAGE_HEIGHT = 15;
   const int MESSAGE_SPACING = 2;
   const int WIFI_WIDTH = 20;
   const int WIFI_HEIGHT = 10;
-  
+
   // Calculate the x and y coordinates of the message and wifi icon
   int x = 1;
   int y = 17;
-  switch (index) {
-    case 1:
-      x = 1;
-      y = 17;
-      break;
-    case 2:
-      x = 1;
-      y = 17 + MESSAGE_HEIGHT + MESSAGE_SPACING;
-      break;
-    case 3:
-      x = 1;
-      y = 17 + (MESSAGE_HEIGHT * 2) + (MESSAGE_SPACING * 2);
-      break;
-    default:
-      break;
+  switch (index)
+  {
+  case 1:
+    x = 1;
+    y = 17;
+    break;
+  case 2:
+    x = 1;
+    y = 17 + MESSAGE_HEIGHT + MESSAGE_SPACING;
+    break;
+  case 3:
+    x = 1;
+    y = 17 + (MESSAGE_HEIGHT * 2) + (MESSAGE_SPACING * 2);
+    break;
+  default:
+    break;
   }
-  
+
   // Draw the wifi signal strength icon
   drawWiFiBars(MESSAGE_WIDTH - WIFI_WIDTH - 5 - 1, y, strength);
-  
+
   // Draw the message text
   display.setTextSize(1);
   display.setTextColor(WHITE);
@@ -561,43 +639,49 @@ void inputs(char message[], int index, int strength) // number = number of box w
   display.display();
 }
 
-void drawWiFiBars(int x, int y, int signal) {
+void drawWiFiBars(int x, int y, int signal)
+{
 
   // Fixed width and height of each bar
   const int BAR_WIDTH = 4;
   const int BAR_HEIGHT = 2;
 
-  display.fillRect(x, y, 4*5 + 4, 10, BLACK);
+  display.fillRect(x, y, 4 * 5 + 4, 10, BLACK);
 
   // Draw the bars
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < 5; i++)
+  {
     int numBars = i + 1;
     int barX = x + i * (BAR_WIDTH + 1);
     int barY = y + BAR_HEIGHT * 4;
-    if (signal >= numBars) {
+    if (signal >= numBars)
+    {
       display.fillRect(barX, barY - (numBars - 1) * BAR_HEIGHT, BAR_WIDTH, numBars * BAR_HEIGHT, WHITE);
-    } else {
+    }
+    else
+    {
       display.drawRect(barX, barY - (numBars - 1) * BAR_HEIGHT, BAR_WIDTH, numBars * BAR_HEIGHT, WHITE);
     }
   }
   display.display();
 }
 
-void drawBatteryLevel(int x, int y, float voltage) {
+void drawBatteryLevel(int x, int y, float adc_value)
+{
   const int BAR_SPACING = 2;
   const int BAR_MAX_WIDTH = 25 - (BAR_SPACING * 2);
-  display.fillRect(x, y, 25+3, 10, BLACK);
+  display.fillRect(x, y, 25 + 3, 10, BLACK);
 
   // Calculate the battery level as a percentage
-  int level = map(voltage, 0, 4.2, 0, 100);
-  
+  int level = map(adc_value, 0, 4000, 0, 100);
+
   // Calculate the width of the filled bar
   int filledWidth = map(level, 0, 100, 0, BAR_MAX_WIDTH);
-  
+
   // Draw the battery icon
   display.drawRect(x, y, 25, 10, WHITE);
   display.fillRect(x + BAR_SPACING, y + BAR_SPACING, filledWidth, 10 - (BAR_SPACING * 2), WHITE);
-  display.fillRect(x+25, y+3, 3, 4,WHITE);
+  display.fillRect(x + 25, y + 3, 3, 4, WHITE);
   display.display();
 }
 
@@ -636,16 +720,20 @@ void drawBatteryLevel(int x, int y, float voltage) {
 
 void modee()
 {
-  
+
   display.setTextSize(1);
   display.setTextColor(WHITE);
   display.setCursor(0, 0);
   display.print("MODE : ");
   display.print(String(mode));
   display.drawLine(0, 13, 128, 13, WHITE);
-  
-
-  drawBatteryLevel(96, 0, (analogRead(potPin)/4095)*100);
+  Serial.println("potentiometer value");
+  Serial.println(analogRead(potPin));
+  Serial.println("potentiometer value");
+  Serial.println(analogRead(potPin) / 4095);
+  Serial.println("potentiometer value");
+  Serial.println((analogRead(potPin) / 4095) * 100);
+  drawBatteryLevel(96, 0, analogRead(potPin));
   display.display();
   // tft.setCursor(0, 10);
   // tft.setTextColor(LIGHT_PINK);
