@@ -27,6 +27,7 @@
 #define OLED_DC 5
 #define OLED_CS 19
 #define OLED_RESET 4
+
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT,
                          OLED_MOSI, OLED_CLK, OLED_DC, OLED_RESET, OLED_CS);
 
@@ -463,7 +464,7 @@ void loop()
               Serial.print("RSSI right now.. ");
               Serial.println(rssi_int[i]);
               int rssi_for_print_in_tft = map(rssi_int[i], upper_range, lower_range, 4, 1);
-              ui(buf_temp, i, rssi_for_print_in_tft);
+              ui(buf_temp, i+1, rssi_for_print_in_tft);
               last_millis_for_printing = millis();
 
               if (i == 0)
@@ -603,8 +604,10 @@ void ui(char *message, int index, int strength) // number = number of box we wan
   const int MESSAGE_SPACING = 2;
   const int WIFI_WIDTH = 20;
   const int WIFI_HEIGHT = 10;
-
-  display.fillRect(1, (index + 1) * 17, 128 - 1, (MESSAGE_HEIGHT + MESSAGE_SPACING), BLACK);
+  Serial.print("index ");
+  Serial.println(index);
+  display.fillRect(1, 17 + (MESSAGE_HEIGHT * (index-1)) + (MESSAGE_SPACING * (index-1)), 128 - 1, (MESSAGE_HEIGHT + MESSAGE_SPACING), BLACK);
+  display.display();
   // Calculate the x and y coordinates of the message and wifi icon
   int x = 1;
   int y = 17;
@@ -632,6 +635,13 @@ void ui(char *message, int index, int strength) // number = number of box we wan
   // Draw the message text
   display.setTextSize(1);
   display.setTextColor(WHITE);
+  Serial.print("X, y");
+  Serial.print(x);
+  Serial.print(" ");
+  Serial.println(y);
+
+  Serial.print("clear disply ");
+  Serial.println(((index + 1) * (MESSAGE_HEIGHT + MESSAGE_SPACING)) + 17);
   display.setCursor(x, y);
   display.print(message);
 
