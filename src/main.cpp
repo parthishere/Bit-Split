@@ -278,6 +278,8 @@ void setup()
   Serial.println();
   while (Serial2.available())
   {
+    
+    
     Serial.printf("%02X", Serial2.read());
   }
 
@@ -368,7 +370,7 @@ void loop()
     if (initial)
     {
       totalpackets = Serial2.read();
-      if (totalpackets != 34 && totalpackets != 20 && totalpackets != 48 && totalpackets != 62 && totalpackets != 76 && totalpackets != 90 && totalpackets != 104)
+      if (totalpackets != 34 && totalpackets != 20 && totalpackets != 48)
       {
         break;
       }
@@ -550,11 +552,7 @@ void loop()
     periodicClear();
     last_millis_to_on = millis();
   }
-  // if ((millis() - last_millis_to_on_battery_draw > 5000))
-  // {
-  // batteryDraw(analogRead(batPin));
-  // last_millis_to_on_battery_draw = millis();
-  // }
+
 
   Serial.flush();
 }
@@ -606,7 +604,7 @@ void ui(char *message, int index, int strength) // number = number of box we wan
   const int WIFI_WIDTH = 20;
   const int WIFI_HEIGHT = 10;
 
-  display.fillRect(1, 17, 128 - 1, (index + 1) * (MESSAGE_HEIGHT + MESSAGE_SPACING) + 17, BLACK);
+  display.fillRect(1, (index + 1) * 17, 128 - 1, (MESSAGE_HEIGHT + MESSAGE_SPACING), BLACK);
   // Calculate the x and y coordinates of the message and wifi icon
   int x = 1;
   int y = 17;
@@ -674,7 +672,7 @@ void drawBatteryLevel(int x, int y, float adc_value)
   display.fillRect(x, y, 25 + 3, 10, BLACK);
 
   // Calculate the battery level as a percentage
-  int level = map(adc_value, 0, 4000, 0, 100);
+  int level = map(adc_value, 0, 4095, 0, 100);
 
   // Calculate the width of the filled bar
   int filledWidth = map(level, 0, 100, 0, BAR_MAX_WIDTH);
