@@ -19,6 +19,8 @@
 #define FREQ 4950
 #define RESOLUTION 8
 
+#define FREQ_AUDIO_JACK 1000
+
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
 
@@ -254,16 +256,20 @@ void setup()
 
   if (use_audio_jack == true)
   {
-    Serial.println("wont buzz");
-    digitalWrite(audioPin, LOW);
+    / digitalWrite(audioPin, LOW);
+    ledcWriteTone(0, 0);
     delay(2000);
-    digitalWrite(audioPin, HIGH);
+    // digitalWrite(audioPin, HIGH);
+    ledcWriteTone(0, FREQ_AUDIO_JACK);
     delay(100);
-    digitalWrite(audioPin, LOW);
+    // digitalWrite(audioPin, LOW);
+    ledcWriteTone(0, 0);
     delay(100);
-    digitalWrite(audioPin, HIGH);
+    // digitalWrite(audioPin, HIGH);
+    ledcWriteTone(0, FREQ_AUDIO_JACK);
     delay(100);
-    digitalWrite(audioPin, LOW);
+    // digitalWrite(audioPin, LOW);
+    ledcWriteTone(0, 0);
     delay(100);
   }
   else
@@ -504,7 +510,7 @@ void loop()
                   if (use_audio_jack == true)
                   {
                     digitalWrite(audioPin, HIGH);
-                    ledcWriteTone(0, frequency);
+                    ledcWriteTone(0, FREQ_AUDIO_JACK);
                   }
                   else
                   {
@@ -556,7 +562,7 @@ void loop()
         if (use_audio_jack == true)
         {
           // digitalWrite(audioPin, HIGH);
-          ledcWriteTone(0, frequency);
+          ledcWriteTone(0, FREQ_AUDIO_JACK);
         }
         else
         {
