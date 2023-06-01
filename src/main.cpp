@@ -15,6 +15,7 @@
 #include <Adafruit_SSD1306.h>
 
 #define buzChannel 0
+#define audioChannel 0
 #define FREQ 4950
 #define RESOLUTION 8
 
@@ -27,7 +28,6 @@
 #define OLED_DC 5
 #define OLED_CS 19
 #define OLED_RESET 4
-
 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT,
                          OLED_MOSI, OLED_CLK, OLED_DC, OLED_RESET, OLED_CS);
@@ -45,8 +45,7 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT,
 int buzPin = 32, potPin = 34, b1pin = 27, b2pin = 26, b3pin = 25, b4pin = 33, batPin = 4, audioPin = 33, jackIsConnectedPin = 15;
 
 // Timer settings
-#define TIMER_INTERVAL_US 500000  // 500ms interval
-
+#define TIMER_INTERVAL_US 500000 // 500ms interval
 
 // #define LCD_CS A3 // Chip Select goes to Analog 3
 // #define LCD_CD A2 // Command/Data goes to Analog 2
@@ -75,13 +74,11 @@ volatile bool timerFlag = false;
 bool ledState = false;
 
 void ui(char *message = nullptr, int index = -1, int strength = -1);
-
 void drawWiFiBars(int x, int y, int signal);
 void drawBatteryLevel(int x, int y, float adc_value);
 void batteryDraw(int analog_value);
 void modee();
 void charge();
-
 int change_delay(int intensity);
 
 bool use_audio_jack = false;
@@ -99,13 +96,13 @@ long int last_millis_to_on_battery_draw, last_millis_to_on, last_millis_to_off;
 bool do_not_buz;
 int upper_range{30}, lower_range{70};
 long int last_millis_for_printing;
-BluetoothSerial SerialBT;
 
+
+BluetoothSerial SerialBT;
 // TFT_eSPI tft = TFT_eSPI();
 Ticker periodicTicker;
 Ticker onceTicker;
 
-// QueueHandle_t xQueue;
 
 bool b1_pin_as_mode = false;
 bool b2_pin_as_mode = false;
@@ -214,11 +211,14 @@ void setup()
   pinMode(b3pin, INPUT_PULLUP);
   pinMode(b4pin, INPUT_PULLUP);
   pinMode(jackIsConnectedPin, INPUT_PULLUP);
-  pinMode(audioPin, OUTPUT);
+  // pinMode(audioPin, OUTPUT);
   pinMode(batPin, INPUT);
 
   ledcSetup(buzChannel, FREQ, RESOLUTION);
   ledcAttachPin(buzPin, buzChannel);
+
+  ledcSetup(audioChannel, FREQ, RESOLUTION);
+  ledcAttachPin(audioPin, buzChannel);
 
   // attach the channel to the GPIO to be controlled
 
@@ -295,8 +295,7 @@ void setup()
   Serial.println();
   while (Serial2.available())
   {
-    
-    
+
     Serial.printf("%02X", Serial2.read());
   }
 
@@ -332,10 +331,9 @@ void setup()
 
   display.display();
 
-
-  timer = timerBegin(0, 80, true);  // Timer 0, prescaler 80, count up
-  timerAttachInterrupt(timer, &timerISR, true);  // Attach ISR, edge triggered
-  timerAlarmWrite(timer, TIMER_INTERVAL_US, true);  // Set interval and reload
+  timer = timerBegin(0, 80, true);                 // Timer 0, prescaler 80, count up
+  timerAttachInterrupt(timer, &timerISR, true);    // Attach ISR, edge triggered
+  timerAlarmWrite(timer, TIMER_INTERVAL_US, true); // Set interval and reload
   timerAlarmEnable(timer);
 }
 
@@ -424,13 +422,12 @@ void loop()
 
           int num_cards = tdata[4];
           // Serial.printf("\nnum of cards: %d", num_cards);
-          
+
           // RSSI
 
           byte rssi[num_cards];
           int rssi_int[num_cards];
 
-          
           for (int i = 1; i <= num_cards; i++)
           {
             int index = (13 * (i - 1)) + 5 + (i - 1);
@@ -454,7 +451,6 @@ void loop()
               {
                 epc[i][j] = tdata[index];
                 // Serial.printf("%02X ", epc[i][j]);
-
               }
             }
             // Serial.printf("\n");
@@ -478,11 +474,9 @@ void loop()
               char *buf_temp = buf;
 
               char buf2[100];
-              sprintf(buf2, "%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X", epc[i][0], epc[i][1], epc[i][2], epc[i][3], epc[i][4],epc[i][5], epc[i][6], epc[i][7], epc[i][8],epc[i][9], epc[i][10], epc[i][11]);
+              sprintf(buf2, "%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X", epc[i][0], epc[i][1], epc[i][2], epc[i][3], epc[i][4], epc[i][5], epc[i][6], epc[i][7], epc[i][8], epc[i][9], epc[i][10], epc[i][11]);
               char *buf_temp2 = buf2;
 
-
-              
               SerialBT.print("count:");
               SerialBT.print(static_cast<int>(num_cards));
               SerialBT.print(" ");
@@ -495,12 +489,11 @@ void loop()
               SerialBT.print("mode:");
               SerialBT.print(mode);
               SerialBT.print("\n");
-             
 
               //==> tft.fillRect(5, 90 + i * 30, 220, 25, BLACK);
-              
+
               int rssi_for_print_in_tft = map(rssi_int[i], upper_range, lower_range, 4, 1);
-              ui(buf_temp, i+1, rssi_for_print_in_tft);
+              ui(buf_temp, i + 1, rssi_for_print_in_tft);
               last_millis_for_printing = millis();
 
               if (i == 0)
@@ -511,6 +504,7 @@ void loop()
                   if (use_audio_jack == true)
                   {
                     digitalWrite(audioPin, HIGH);
+                    ledcWriteTone(0, frequency);
                   }
                   else
                   {
@@ -537,36 +531,44 @@ void loop()
     }
   }
 
-if(do_not_buz == false && delay_buz != -1){
-   if (timerFlag) {
-    if (ledState) {
-      // Turn off LED after onTime
-      if (use_audio_jack == true)
+  if (do_not_buz == false && delay_buz != -1)
+  {
+    if (timerFlag)
+    {
+      if (ledState)
       {
-        digitalWrite(audioPin, LOW);
+        // Turn off LED after onTime
+        if (use_audio_jack == true)
+        {
+          digitalWrite(audioPin, LOW);
+           // Generate tone of specified frequenc
+          ledcWriteTone(0, 0); // Stop the tone
+        }
+        else
+        {
+          ledcWrite(buzChannel, LOW);
+        }
+        timerAlarmWrite(timer, temp_delay_buz * 1000, true); // Set interval for LED OFF state
       }
       else
       {
-        ledcWrite(buzChannel, LOW);
+        // Turn on LED after offTime
+        if (use_audio_jack == true)
+        {
+          // digitalWrite(audioPin, HIGH);
+          ledcWriteTone(0, frequency);
+        }
+        else
+        {
+          ledcWrite(buzChannel, 128);
+        }
+        timerAlarmWrite(timer, delay_buz * 1000, true); // Set interval for LED ON state
       }
-      timerAlarmWrite(timer, temp_delay_buz * 1000, true);  // Set interval for LED OFF state
-    } else {
-      // Turn on LED after offTime
-      if (use_audio_jack == true)
-      {
-        digitalWrite(audioPin, HIGH);
-      }
-      else
-      {
-        ledcWrite(buzChannel, 128);
-      }
-      timerAlarmWrite(timer, delay_buz * 1000, true);  // Set interval for LED ON state
-    }
 
-    ledState = !ledState;
-    timerFlag = false;
+      ledState = !ledState;
+      timerFlag = false;
+    }
   }
-}
   // if (delay_buz != -1 && do_not_buz == false)
   // {
 
@@ -619,7 +621,6 @@ if(do_not_buz == false && delay_buz != -1){
     last_millis_to_on = millis();
   }
 
-
   Serial.flush();
 }
 
@@ -671,7 +672,7 @@ void ui(char *message, int index, int strength) // number = number of box we wan
   const int WIFI_HEIGHT = 10;
   Serial.print("index ");
   Serial.println(index);
-  display.fillRect(1, 17 + (MESSAGE_HEIGHT * (index-1)) + (MESSAGE_SPACING * (index-1)), 128 - 1, (MESSAGE_HEIGHT + MESSAGE_SPACING), BLACK);
+  display.fillRect(1, 17 + (MESSAGE_HEIGHT * (index - 1)) + (MESSAGE_SPACING * (index - 1)), 128 - 1, (MESSAGE_HEIGHT + MESSAGE_SPACING), BLACK);
   display.display();
   // Calculate the x and y coordinates of the message and wifi icon
   int x = 1;
@@ -700,7 +701,6 @@ void ui(char *message, int index, int strength) // number = number of box we wan
   // Draw the message text
   display.setTextSize(1);
   display.setTextColor(WHITE);
-
 
   // Serial.println(((index + 1) * (MESSAGE_HEIGHT + MESSAGE_SPACING)) + 17);
   display.setCursor(x, y);
