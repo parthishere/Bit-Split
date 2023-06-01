@@ -28,6 +28,7 @@
 #define OLED_CS 19
 #define OLED_RESET 4
 
+
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT,
                          OLED_MOSI, OLED_CLK, OLED_DC, OLED_RESET, OLED_CS);
 
@@ -402,15 +403,13 @@ void loop()
 
           int num_cards = tdata[4];
           // Serial.printf("\nnum of cards: %d", num_cards);
-          SerialBT.print("NUM ");
-          SerialBT.print(static_cast<int>(num_cards));
+          
           // RSSI
 
           byte rssi[num_cards];
           int rssi_int[num_cards];
 
-          SerialBT.print(" ");
-          SerialBT.print(" RSSI ");
+          
           for (int i = 1; i <= num_cards; i++)
           {
             int index = (13 * (i - 1)) + 5 + (i - 1);
@@ -419,15 +418,12 @@ void loop()
               rssi[i - 1] = tdata[index];
               rssi_int[i - 1] = (int)tdata[index];
               // Serial.printf("\nRSSI of card %d is %d", i, rssi[i - 1]);
-              SerialBT.print(rssi[i - 1]);
-              SerialBT.print(" ");
             }
           }
 
           // EPC
           byte epc[num_cards][12];
           // Serial.printf("\nData of Cards:");
-          SerialBT.print(" DATA ");
           for (int i = 0; i < num_cards; i++)
           {
             for (int j = 0; j < 12; j++)
@@ -437,12 +433,11 @@ void loop()
               {
                 epc[i][j] = tdata[index];
                 // Serial.printf("%02X ", epc[i][j]);
-                SerialBT.print(epc[i][j]);
+
               }
             }
             // Serial.printf("\n");
           }
-          SerialBT.println("\n");
           // Serial.printf("\n");
           if (!(num_cards <= 1))
           {
@@ -458,11 +453,29 @@ void loop()
             {
 
               char buf[100];
-              sprintf(buf, "02X%02X%02X", epc[i][10], epc[i][11], epc[i][12]);
+              sprintf(buf, "%02X%02X%02X%02X", epc[i][9], epc[i][10], epc[i][11], epc[i][12]);
               char *buf_temp = buf;
+
+              char buf2[100];
+              sprintf(buf2, "%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X", epc[i][0], epc[i][1], epc[i][2], epc[i][3], epc[i][4],epc[i][5], epc[i][6], epc[i][7], epc[i][8],epc[i][9], epc[i][10], epc[i][11]);
+              char *buf_temp2 = buf2;
+
+              SerialBT.print("count:");
+              SerialBT.print(static_cast<int>(num_cards));
+              SerialBT.print(" ");
+              SerialBT.print("id:");
+              SerialBT.print(buf_temp2);
+              SerialBT.print(" ");
+              SerialBT.print("RSSI(%):");
+              SerialBT.print(map(rssi[i], 30, 70, 100, 0));
+              SerialBT.print(" ");
+              SerialBT.print("mode:");
+              SerialBT.print(mode);
+              SerialBT.print("\n");
+              SerialBT.println();
+
               //==> tft.fillRect(5, 90 + i * 30, 220, 25, BLACK);
-              Serial.print("RSSI right now.. ");
-              Serial.println(rssi_int[i]);
+              
               int rssi_for_print_in_tft = map(rssi_int[i], upper_range, lower_range, 4, 1);
               ui(buf_temp, i+1, rssi_for_print_in_tft);
               last_millis_for_printing = millis();
@@ -549,7 +562,6 @@ void loop()
 
   if ((millis() - last_millis_to_on > 5000))
   {
-    Serial.println("will clear the display");
     periodicClear();
     last_millis_to_on = millis();
   }
@@ -635,13 +647,9 @@ void ui(char *message, int index, int strength) // number = number of box we wan
   // Draw the message text
   display.setTextSize(1);
   display.setTextColor(WHITE);
-  Serial.print("X, y");
-  Serial.print(x);
-  Serial.print(" ");
-  Serial.println(y);
 
-  Serial.print("clear disply ");
-  Serial.println(((index + 1) * (MESSAGE_HEIGHT + MESSAGE_SPACING)) + 17);
+
+  // Serial.println(((index + 1) * (MESSAGE_HEIGHT + MESSAGE_SPACING)) + 17);
   display.setCursor(x, y);
   display.print(message);
 
