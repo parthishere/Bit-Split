@@ -179,7 +179,7 @@ void setup()
   Serial2.begin(115200);
   delay(1000);
 
-  SerialBT.begin();
+  SerialBT.begin(); // 9600
   esp_log_level_set("*", ESP_LOG_ERROR);
   esp_log_level_set("heap_init", ESP_LOG_WARN);
   esp_log_level_set("heap_caps", ESP_LOG_WARN);
@@ -405,7 +405,6 @@ void loop()
           // Serial.printf("\nnum of cards: %d", num_cards);
           
           // RSSI
-
           byte rssi[num_cards];
           int rssi_int[num_cards];
 
@@ -462,17 +461,16 @@ void loop()
 
               SerialBT.print("count:");
               SerialBT.print(static_cast<int>(num_cards));
-              SerialBT.print(" ");
+              SerialBT.print(",");
               SerialBT.print("id:");
               SerialBT.print(buf_temp2);
-              SerialBT.print(" ");
+              SerialBT.print(",");
               SerialBT.print("RSSI(%):");
-              SerialBT.print(map(rssi[i], 30, 70, 100, 0));
-              SerialBT.print(" ");
+              SerialBT.print(map(abs(rssi_int[i]), 28, 80, 100, 0));
+              SerialBT.print(",");
               SerialBT.print("mode:");
               SerialBT.print(mode);
               SerialBT.print("\n");
-              SerialBT.println();
 
               //==> tft.fillRect(5, 90 + i * 30, 220, 25, BLACK);
               
@@ -616,8 +614,7 @@ void ui(char *message, int index, int strength) // number = number of box we wan
   const int MESSAGE_SPACING = 2;
   const int WIFI_WIDTH = 20;
   const int WIFI_HEIGHT = 10;
-  Serial.print("index ");
-  Serial.println(index);
+
   display.fillRect(1, 17 + (MESSAGE_HEIGHT * (index-1)) + (MESSAGE_SPACING * (index-1)), 128 - 1, (MESSAGE_HEIGHT + MESSAGE_SPACING), BLACK);
   display.display();
   // Calculate the x and y coordinates of the message and wifi icon
