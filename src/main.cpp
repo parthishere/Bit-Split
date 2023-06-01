@@ -69,8 +69,10 @@ int buzPin = 32, potPin = 34, b1pin = 27, b2pin = 26, b3pin = 25, b4pin = 33, ba
 
 const char message[] = "card detail";
 int charge_length = 50, is_charging;
+
 hw_timer_t *timer = NULL;
 volatile bool timerFlag = false;
+bool ledState = false;
 
 void ui(char *message = nullptr, int index = -1, int strength = -1);
 
@@ -479,6 +481,8 @@ void loop()
               sprintf(buf2, "%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X", epc[i][0], epc[i][1], epc[i][2], epc[i][3], epc[i][4],epc[i][5], epc[i][6], epc[i][7], epc[i][8],epc[i][9], epc[i][10], epc[i][11]);
               char *buf_temp2 = buf2;
 
+
+              
               SerialBT.print("count:");
               SerialBT.print(static_cast<int>(num_cards));
               SerialBT.print(" ");
@@ -491,7 +495,7 @@ void loop()
               SerialBT.print("mode:");
               SerialBT.print(mode);
               SerialBT.print("\n");
-              SerialBT.println();
+             
 
               //==> tft.fillRect(5, 90 + i * 30, 220, 25, BLACK);
               
@@ -533,25 +537,10 @@ void loop()
     }
   }
 
-  if (delay_buz != -1 && do_not_buz == false)
-  {
-
-    if (buzzerState == 0 && millis() - buzzerEndMillis >= delay_buz)
-    {
-      if (use_audio_jack == true)
-      {
-        digitalWrite(audioPin, HIGH);
-      }
-      else
-      {
-        ledcWrite(buzChannel, 128);
-      }
-      buzzerState = 1;
-      buzzerStartMillis = millis();
-    }
-
-    if (buzzerState == 1 && millis() - buzzerStartMillis >= temp_delay_buz)
-    {
+if(do_not_buz == false && delay_buz != -1){
+   if (timerFlag) {
+    if (ledState) {
+      // Turn off LED after onTime
       if (use_audio_jack == true)
       {
         digitalWrite(audioPin, LOW);
@@ -560,24 +549,69 @@ void loop()
       {
         ledcWrite(buzChannel, LOW);
       }
-      buzzerState = 0;
-      buzzerEndMillis = millis();
-      delay_buz = change_delay(-1);
+      timerAlarmWrite(timer, temp_delay_buz * 1000, true);  // Set interval for LED OFF state
+    } else {
+      // Turn on LED after offTime
+      if (use_audio_jack == true)
+      {
+        digitalWrite(audioPin, HIGH);
+      }
+      else
+      {
+        ledcWrite(buzChannel, 128);
+      }
+      timerAlarmWrite(timer, delay_buz * 1000, true);  // Set interval for LED ON state
     }
-  }
 
-  else if (do_not_buz == false)
-  {
-    if (use_audio_jack == true)
-    {
-      digitalWrite(audioPin, LOW);
-    }
-    else
-    {
-      ledcWrite(buzChannel, LOW);
-    }
-    buzzerState = 0;
+    ledState = !ledState;
+    timerFlag = false;
   }
+}
+  // if (delay_buz != -1 && do_not_buz == false)
+  // {
+
+  //   if (buzzerState == 0 && millis() - buzzerEndMillis >= delay_buz)
+  //   {
+  //     if (use_audio_jack == true)
+  //     {
+  //       digitalWrite(audioPin, HIGH);
+  //     }
+  //     else
+  //     {
+  //       ledcWrite(buzChannel, 128);
+  //     }
+  //     buzzerState = 1;
+  //     buzzerStartMillis = millis();
+  //   }
+
+  //   if (buzzerState == 1 && millis() - buzzerStartMillis >= temp_delay_buz)
+  //   {
+  //     if (use_audio_jack == true)
+  //     {
+  //       digitalWrite(audioPin, LOW);
+  //     }
+  //     else
+  //     {
+  //       ledcWrite(buzChannel, LOW);
+  //     }
+  //     buzzerState = 0;
+  //     buzzerEndMillis = millis();
+  //     delay_buz = change_delay(-1);
+  //   }
+  // }
+
+  // else if (do_not_buz == false)
+  // {
+  //   if (use_audio_jack == true)
+  //   {
+  //     digitalWrite(audioPin, LOW);
+  //   }
+  //   else
+  //   {
+  //     ledcWrite(buzChannel, LOW);
+  //   }
+  //   buzzerState = 0;
+  // }
 
   if ((millis() - last_millis_to_on > 5000))
   {
