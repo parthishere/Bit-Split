@@ -44,6 +44,10 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT,
 
 int buzPin = 32, potPin = 34, b1pin = 27, b2pin = 26, b3pin = 25, b4pin = 33, batPin = 4, audioPin = 33, jackIsConnectedPin = 15;
 
+// Timer settings
+#define TIMER_INTERVAL_US 500000  // 500ms interval
+
+
 // #define LCD_CS A3 // Chip Select goes to Analog 3
 // #define LCD_CD A2 // Command/Data goes to Analog 2
 // #define LCD_WR A1 // LCD Write goes to Analog 1
@@ -65,6 +69,8 @@ int buzPin = 32, potPin = 34, b1pin = 27, b2pin = 26, b3pin = 25, b4pin = 33, ba
 
 const char message[] = "card detail";
 int charge_length = 50, is_charging;
+hw_timer_t *timer = NULL;
+volatile bool timerFlag = false;
 
 void ui(char *message = nullptr, int index = -1, int strength = -1);
 
@@ -80,8 +86,9 @@ bool use_audio_jack = false;
 int count = 0, count_t = 0, totalpackets = 0;
 byte tdata[200];
 bool initial = true;
-int delay_buz = -1, intensity;
-int temp_delay_buz{};
+volatile int delay_buz = -1;
+int intensity;
+volatile int temp_delay_buz{};
 const int freq = 5000;
 const int ledChannel = 0;
 const int resolution = 8;
@@ -121,6 +128,12 @@ int mode = 1;
 
 static const BaseType_t pro_cpu = 0;
 static const BaseType_t app_cpu = 1;
+
+void IRAM_ATTR timerISR()
+{
+  timerFlag = true;
+}
+
 void periodicClear()
 {
   display.fillRect(1, 17, 128 - 1, 64 - 17, BLACK);
@@ -316,6 +329,12 @@ void setup()
   modee();
 
   display.display();
+
+
+  timer = timerBegin(0, 80, true);  // Timer 0, prescaler 80, count up
+  timerAttachInterrupt(timer, &timerISR, true);  // Attach ISR, edge triggered
+  timerAlarmWrite(timer, TIMER_INTERVAL_US, true);  // Set interval and reload
+  timerAlarmEnable(timer);
 }
 
 void loop()
