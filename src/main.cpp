@@ -256,7 +256,7 @@ void setup()
 
   if (use_audio_jack == true)
   {
-    / digitalWrite(audioPin, LOW);
+    digitalWrite(audioPin, LOW);
     ledcWriteTone(0, 0);
     delay(2000);
     // digitalWrite(audioPin, HIGH);
