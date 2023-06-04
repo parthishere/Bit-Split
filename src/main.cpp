@@ -555,6 +555,7 @@ void loop()
           ledcWrite(buzChannel, LOW);
         }
         timerAlarmWrite(timer, temp_delay_buz * 1000, true); // Set interval for LED OFF state
+        delay_buz = change_delay(-1);
       }
       else
       {
@@ -568,7 +569,9 @@ void loop()
         {
           ledcWrite(buzChannel, 128);
         }
+        
         timerAlarmWrite(timer, delay_buz * 1000, true); // Set interval for LED ON state
+
       }
 
       ledState = !ledState;
@@ -676,8 +679,6 @@ void ui(char *message, int index, int strength) // number = number of box we wan
   const int MESSAGE_SPACING = 2;
   const int WIFI_WIDTH = 20;
   const int WIFI_HEIGHT = 10;
-  Serial.print("index ");
-  Serial.println(index);
   display.fillRect(1, 17 + (MESSAGE_HEIGHT * (index - 1)) + (MESSAGE_SPACING * (index - 1)), 128 - 1, (MESSAGE_HEIGHT + MESSAGE_SPACING), BLACK);
   display.display();
   // Calculate the x and y coordinates of the message and wifi icon
