@@ -1,25 +1,28 @@
 #include <Arduino.h>
 
+// Bluetooth Library
 #include "BluetoothSerial.h"
 #include "esp_system.h"
 
-#include <TFT_eSPI.h> // Hardware-specific library
-#include <SPI.h>
-
+// Timer
 #include <Ticker.h>
 #include <list>
 
+// SPI and other display library
 #include <SPI.h>
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 
-#define buzChannel 0
-#define audioChannel 0
-#define FREQ 4950
-#define RESOLUTION 8
 
-#define FREQ_AUDIO_JACK 1000
+//PWM
+#define buzChannel 0 // PWM channel for buzzer
+
+#define audioChannel 0 // PWM audio channel for audio jack
+#define FREQ 4950 // Frequancy of the audio jacl
+#define RESOLUTION 8 // Resolution of the PWM (8 bit, 10 bit, 12 bit)
+
+#define FREQ_AUDIO_JACK 1000 
 
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
@@ -31,6 +34,7 @@
 #define OLED_CS 19
 #define OLED_RESET 4
 
+// initialization of 
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT,
                          OLED_MOSI, OLED_CLK, OLED_DC, OLED_RESET, OLED_CS);
 
@@ -482,7 +486,7 @@ void loop()
               char buf2[100];
               sprintf(buf2, "%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X", epc[i][0], epc[i][1], epc[i][2], epc[i][3], epc[i][4], epc[i][5], epc[i][6], epc[i][7], epc[i][8], epc[i][9], epc[i][10], epc[i][11]);
               char *buf_temp2 = buf2;
-
+              
               SerialBT.print("count:");
               SerialBT.print(static_cast<int>(num_cards));
               SerialBT.print(" ");
