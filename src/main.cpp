@@ -57,24 +57,6 @@ int buzPin = 32, potPin = 34, b1pin = 27, b2pin = 26, b3pin = 25, b4pin = 33, ba
 
 #define FORMAT_SPIFFS_IF_FAILED true
 
-// #define LCD_CS A3 // Chip Select goes to Analog 3
-// #define LCD_CD A2 // Command/Data goes to Analog 2
-// #define LCD_WR A1 // LCD Write goes to Analog 1
-// #define LCD_RD A0 // LCD Read goes to Analog 0
-
-// #define BLACK 0x0000
-// #define BLUE 0x001F
-// #define RED 0xF800
-// #define GREEN 0x07E0
-// #define CYAN 0x07FF
-// #define MAGENTA 0xF81F
-// #define YELLOW 0xFFE0
-// #define WHITE 0xFFFF
-// #define PINK 0xEB34
-// #define LIGHT_PINK 0x9f3b
-// #define LIGHT_PURPLE 0x8594
-// #define LIGHT_BLUE 0x93ff
-// #define CYANN 0xE536F3
 
 const char message[] = "card detail";
 int charge_length = 50, is_charging;
@@ -83,7 +65,7 @@ hw_timer_t *timer = NULL;
 volatile bool timerFlag = false;
 bool ledState = false;
 
-void ui(char *message = nullptr, int index = -1, int strength = -1, bool found=false);
+void ui(char *message = nullptr, int index = -1, int strength = -1, bool found = false);
 void drawWiFiBars(int x, int y, int signal);
 void drawBatteryLevel(int x, int y, float adc_value);
 void batteryDraw(int analog_value);
@@ -113,7 +95,10 @@ long int last_millis_to_on_battery_draw, last_millis_to_on, last_millis_to_off;
 bool do_not_buz;
 int upper_range{30}, lower_range{70};
 long int last_millis_for_printing;
-String arrayForSearch[200];
+int ArraySerachNumLines;
+String *arrayForSearch;
+String *arrayForCrossCheck;
+
 
 BluetoothSerial SerialBT;
 // TFT_eSPI tft = TFT_eSPI();
@@ -200,9 +185,6 @@ void quickSort(int rssi[], byte epc[][12], int low, int high)
   }
 }
 
-
-
-
 unsigned short calcCRC(byte data[], byte len)
 {
   unsigned short crc = 0xFFFF;
@@ -218,25 +200,18 @@ unsigned short calcCRC(byte data[], byte len)
   return (~crc); // Invert CRC before returning
 }
 
-// Send hexadecimal value via UART (Serial)
-void sendSerialData(byte data[], byte len)
+
+void set_mode(int mode = 0)
 {
-  for (byte i = 0; i < len; i++)
-  {
-    Serial2.write(data[i]); // Send each byte of data
-  }
-}
+  if (!(mode == 0 || mode == 1))
+    return;
 
-void set_mode(int mode = 0) {
-  if (!(mode == 0 || mode == 1)) return;
-
-  byte data_to_set_response_mode[] = { 0x15, 0xF0, 0x09, (byte)mode, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };  //  0x42, 0x0E
+  byte data_to_set_response_mode[] = {0x15, 0xF0, 0x09, (byte)mode, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}; //  0x42, 0x0E
   byte dataSize = sizeof(data_to_set_response_mode) / sizeof(data_to_set_response_mode[0]);
   unsigned short crc = calcCRC(data_to_set_response_mode, dataSize);
 
-  byte crcLSB = crc & 0xFF;         // Extract LSB of CRC
-  byte crcMSB = (crc >> 8) & 0xFF;  // Extract MSB of CRC
-
+  byte crcLSB = crc & 0xFF;        // Extract LSB of CRC
+  byte crcMSB = (crc >> 8) & 0xFF; // Extract MSB of CRC
 
   byte combinedDataSize = dataSize + sizeof(crcLSB) + sizeof(crcMSB);
   byte combinedData[combinedDataSize];
@@ -257,11 +232,10 @@ void set_mode(int mode = 0) {
   Serial2.write('\r');
   Serial2.write('\n');
 
-  
-
   while (Serial2.available() == 0)
     ;
-  while (Serial2.available() > 0) {
+  while (Serial2.available() > 0)
+  {
     Serial.printf("%02X ", Serial2.read());
   }
   Serial.print("\n");
@@ -273,11 +247,12 @@ void mergeArrays(byte dest[], byte src[], byte destSize, byte srcSize, byte merg
 }
 
 byte tid[100];
-bool read_tid(byte epc_temp[]) {
+bool read_tid(byte epc_temp[])
+{
   byte epc[12];
   memcpy(epc, epc_temp, 12);
-  byte read_tid_data[5] = { 0x17, 0x50, 0x03, 0x02, 0x0C };
-  byte remaining_data[6] = { 0x00, 0x00, 0x00, 0x00, 0x00, 0x04 };
+  byte read_tid_data[5] = {0x17, 0x50, 0x03, 0x02, 0x0C};
+  byte remaining_data[6] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x04};
 
   byte firstMergedSize = sizeof(read_tid_data) + sizeof(epc) + sizeof(remaining_data);
   byte firstMergedArray[firstMergedSize];
@@ -293,9 +268,8 @@ bool read_tid(byte epc_temp[]) {
 
   unsigned short crc = calcCRC(firstMergedArray, firstMergedSize);
 
-  byte crcLSB = crc & 0xFF;         // Extract LSB of CRC
-  byte crcMSB = (crc >> 8) & 0xFF;  // Extract MSB of CRC
-
+  byte crcLSB = crc & 0xFF;        // Extract LSB of CRC
+  byte crcMSB = (crc >> 8) & 0xFF; // Extract MSB of CRC
 
   byte combinedDataSize = firstMergedSize + sizeof(crcLSB) + sizeof(crcMSB);
   byte combinedData[combinedDataSize];
@@ -307,7 +281,8 @@ bool read_tid(byte epc_temp[]) {
   combinedData[firstMergedSize] = crcMSB;
   combinedData[firstMergedSize + 1] = crcLSB;
 
-  for (byte i = 0; i < sizeof(combinedData); i++) {
+  for (byte i = 0; i < sizeof(combinedData); i++)
+  {
     Serial2.write(combinedData[i]);
   }
   Serial2.write(0x0d);
@@ -318,24 +293,30 @@ bool read_tid(byte epc_temp[]) {
 
   while (Serial2.available() == 0)
     ;
-  while (Serial2.available() > 0) {
+  while (Serial2.available() > 0)
+  {
     int total_packets = (int)Serial2.read();
     int temp_total_packets_for_cmp = total_packets;
     Serial.println("data ppackets count");
     Serial.println(total_packets);
     byte tid[temp_total_packets_for_cmp - 1 - 2 - 2];
-    if (total_packets != 5 || total_packets < 22) {
-      while (total_packets >= 0) {
+    if (total_packets != 5 || total_packets < 22)
+    {
+      while (total_packets >= 0)
+      {
         byte data = (byte)Serial2.read();
-        if ((temp_total_packets_for_cmp - 1 - 2) > total_packets  && total_packets >= 2) {
+        if ((temp_total_packets_for_cmp - 1 - 2) > total_packets && total_packets >= 2)
+        {
           tid[total_packets] = data;
-          Serial.printf("%02X ",tid[total_packets]);
+          Serial.printf("%02X ", tid[total_packets]);
         }
         total_packets--;
       }
       Serial.println();
       return false;
-    } else {
+    }
+    else
+    {
       return false;
     }
   }
@@ -343,9 +324,10 @@ bool read_tid(byte epc_temp[]) {
   return false;
 };
 
-
 void setup()
 {
+  arrayForSearch = nullptr;
+  arrayForCrossCheck = nullptr;
 
   Serial.begin(115200);
   Serial2.begin(115200);
@@ -380,26 +362,7 @@ void setup()
   ledcSetup(audioChannel, FREQ, RESOLUTION);
   ledcAttachPin(audioPin, buzChannel);
 
-  // attach the channel to the GPIO to be controlled
 
-  /* TFT */
-  // tft.init();
-  // // uint16_t identifier = tft.readID();
-  // tft.begin();
-  // tft.setRotation(2);
-  // tft.fillScreen(WHITE);
-  // tft.setCursor(30, 120);
-  // tft.setTextSize(10);
-  // tft.setTextColor(LIGHT_BLUE);
-  // tft.print("SGL");
-  // delay(3000);
-  // tft.fillScreen(BLACK);
-  // modee();
-
-  // tft.setCursor(90, 4);
-  // tft.setTextSize(3);
-  // tft.setTextColor(CYANN);
-  // tft.print("SGL");
   if (!SPIFFS.begin(FORMAT_SPIFFS_IF_FAILED))
   {
     Serial.println("SPIFFS Mount Failed");
@@ -465,51 +428,39 @@ void setup()
   }
   Serial.println();
 
-
   while (Serial2.available())
   {
     Serial.printf("%02X", Serial2.read());
   }
 
-  // 
-  
-  display.begin(SSD1306_SWITCHCAPVCC);
-  
-  // if (!display.begin(SSD1306_SWITCHCAPVCC))
-  // {
-  //   Serial.println(F("SSD1306 allocation failed"));
-  //   for (;;)
-  //   {
-  //     Serial.print("*");
-  //     ledcWrite(buzChannel, 128);
-  //   } // Don't proceed, loop forever
-  // }
+  //
+
+  if (!display.begin(SSD1306_SWITCHCAPVCC))
+  {
+    Serial.println(F("SSD1306 allocation failed"));
+    for (;;)
+    {
+      Serial.print("*");
+      ledcWrite(buzChannel, 128);
+    } // Don't proceed, loop forever
+  }
 
   display.display();
-  
-  // Draw a single pixel in white
 
-  // while (!Serial2)
-  // {
-  //   ledcWrite(buzChannel, 128);
-  // }
   delay_buz = change_delay(-1);
-  
+
   display.clearDisplay();
-  
 
   // drawWiFiBars(0,0, 2);
   // drawBatteryLevel(25, 50,3.7);
   modee();
 
   display.display();
-  
 
   timer = timerBegin(0, 80, true);                 // Timer 0, prescaler 80, count up
   timerAttachInterrupt(timer, &timerISR, true);    // Attach ISR, edge triggered
   timerAlarmWrite(timer, TIMER_INTERVAL_US, true); // Set interval and reload
   timerAlarmEnable(timer);
-  
 }
 
 void loop()
@@ -638,13 +589,11 @@ void loop()
           else
             ;
 
-          if ((millis() - last_millis_for_printing) > 200)
+          if ((millis() - last_millis_for_printing) > 400)
           {
-          
-            
+
             for (int i = 0; i < num_cards; i++)
             {
-
 
               char buf[100];
               sprintf(buf, "%02X%02X%02X%02X", epc[i][9], epc[i][10], epc[i][11], epc[i][12]);
@@ -655,28 +604,36 @@ void loop()
               char *buf_temp2 = buf2;
 
               bool found = false;
-
-              int numStrings = sizeof(arrayForSearch) / sizeof(arrayForSearch[0]);
-
-              for (int i = 0; i < numStrings; i++) {
-                if (strcmp(arrayForSearch[i].c_str(), buf_temp2) == 0) {
+              
+              for (int i = 0; i < ArraySerachNumLines; i++)
+              {
+                if (strcmp(arrayForSearch[i].c_str(), buf_temp2) == 0)
+                {
                   found = true;
+                  Serial.print("found at index : ");
+                  Serial.println(i);
+                  if (arrayForCrossCheck[i] == "FALSE"){
+                    Serial.println("this is the fucking bomb");
+                  }
+                  else if(arrayForCrossCheck[i] == "TRUE"){
+                    Serial.println("huh toys");
+                  }
                   break;
                 }
               }
 
-              SerialBT.print("count:");
-              SerialBT.print(static_cast<int>(num_cards));
-              SerialBT.print(" ");
-              SerialBT.print("id:");
-              SerialBT.print(buf_temp2);
-              SerialBT.print(" ");
-              SerialBT.print("RSSI(%):");
-              SerialBT.print(map(rssi[i], 30, 70, 100, 0));
-              SerialBT.print(" ");
-              SerialBT.print("mode:");
-              SerialBT.print(mode);
-              SerialBT.print("\n");
+              Serial.print("count:");
+              Serial.print(static_cast<int>(num_cards));
+              Serial.print(" ");
+              Serial.print("id:");
+              Serial.print(buf_temp2);
+              Serial.print(" ");
+              Serial.print("RSSI(%):");
+              Serial.print(map(rssi[i], 30, 70, 100, 0));
+              Serial.print(" ");
+              Serial.print("mode:");
+              Serial.print(mode);
+              Serial.print("\n");
 
               //==> tft.fillRect(5, 90 + i * 30, 220, 25, BLACK);
 
@@ -707,8 +664,40 @@ void loop()
                 }
               }
             }
-            delay(50);
-            
+
+            SerialBT.print("mode:");
+            SerialBT.print(mode);
+            SerialBT.print(",");
+
+            SerialBT.print("battery:");
+            SerialBT.print("battery\%value");
+            SerialBT.print(",");
+
+            SerialBT.print("count:");
+            SerialBT.print(static_cast<int>(num_cards));
+
+            if (count != 0)
+            {
+              for (int i = 0; i < num_cards; i++)
+              {
+                char buf2[100];
+                sprintf(buf2, "%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X", epc[i][0], epc[i][1], epc[i][2], epc[i][3], epc[i][4], epc[i][5], epc[i][6], epc[i][7], epc[i][8], epc[i][9], epc[i][10], epc[i][11]);
+                char *buf_temp2 = buf2;
+
+                SerialBT.print(",");
+                SerialBT.print("id:");
+                SerialBT.print(buf_temp2);
+                SerialBT.print(",");
+                SerialBT.print("rssi(%):");
+                SerialBT.print(rssi[i]);
+              }
+            }
+            SerialBT.print(",");
+            SerialBT.print("end");
+
+            SerialBT.print("\n");
+
+            delay(30);
           }
 
           break;
@@ -896,7 +885,8 @@ void ui(char *message, int index, int strength, bool found) // number = number o
   display.setCursor(x, y);
   display.print(message);
 
-  if (found) display.fillCircle(x+20, y, 6, WHITE); 
+  if (found)
+    display.fillCircle(x + 20, y, 6, WHITE);
 
   display.display();
 }
@@ -1011,8 +1001,30 @@ void readFile(fs::FS &fs, const char *path)
     return;
   }
 
+  ArraySerachNumLines = 0; // Variable to count the number of lines in the file
+
+  // Count the number of lines in the file
+  while (file.available())
+  {
+    String line = file.readStringUntil('\n');
+    ArraySerachNumLines++;
+  }
+  file.close();
+
+  // Allocate memory for the array dynamically
+  arrayForSearch = new String[ArraySerachNumLines];
+  arrayForCrossCheck = new String[ArraySerachNumLines];
+  
+  // Re-open the file to read the data again and store in the array
+  file = fs.open(path);
+  if (!file || file.isDirectory())
+  {
+    Serial.println("- failed to open file for reading");
+    return;
+  }
+
   Serial.println("- read from file:");
-  int i=0;
+  int i = 0;
   while (file.available())
   {
     String line = file.readStringUntil('\n');
@@ -1022,7 +1034,6 @@ void readFile(fs::FS &fs, const char *path)
     String tid = line.substring(0, commaPos);
     line.remove(0, commaPos + 1);
 
-
     commaPos = line.indexOf(',');
     String epc = line.substring(0, commaPos);
     line.remove(0, commaPos + 1);
@@ -1031,16 +1042,22 @@ void readFile(fs::FS &fs, const char *path)
 
     Serial.print("tid: ");
     Serial.println(tid);
-    
+
     Serial.print("epc: ");
     Serial.println(epc);
     arrayForSearch[i] = epc;
     Serial.print("is_bomb: ");
     Serial.println(is_bomb);
+    arrayForCrossCheck[i] = is_bomb;
     Serial.println();
     i++;
   }
   file.close();
+}
+
+void cleanup()
+{
+    delete[] arrayForSearch;
 }
 
 void writeFile(fs::FS &fs, const char *path, const char *message)

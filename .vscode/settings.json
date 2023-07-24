@@ -6,6 +6,8 @@
         "system_error": "cpp",
         "cstring": "cpp",
         "typeinfo": "cpp",
-        "cstddef": "cpp"
+        "cstddef": "cpp",
+        "*.tcc": "cpp",
+        "algorithm": "cpp"
     }
 }
