@@ -5,6 +5,7 @@
         "list": "cpp",
         "system_error": "cpp",
         "cstring": "cpp",
-        "typeinfo": "cpp"
+        "typeinfo": "cpp",
+        "cstddef": "cpp"
     }
 }
