@@ -890,9 +890,6 @@ void ui(char *message, int index, int strength, bool found) // number = number o
   display.setCursor(x, y);
   display.print(message);
 
-  if (found)
-    // display.fillCircle(x + 20, y, 6, WHITE);
-    // display inverted text and rectangle so that user can identify the differetn text
 
   display.display();
 }
