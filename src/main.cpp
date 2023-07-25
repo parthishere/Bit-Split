@@ -879,14 +879,20 @@ void ui(char *message, int index, int strength, bool found) // number = number o
 
   // Draw the message text
   display.setTextSize(1);
-  display.setTextColor(WHITE);
+  if (found) {
+    display.setTextColor(BLACK); // Set text color to black
+    display.fillRect(x, y, MESSAGE_WIDTH, MESSAGE_HEIGHT, WHITE); // Fill the box with white color
+  } else {
+    display.setTextColor(WHITE); // Set text color to white
+  }
 
   // Serial.println(((index + 1) * (MESSAGE_HEIGHT + MESSAGE_SPACING)) + 17);
   display.setCursor(x, y);
   display.print(message);
 
   if (found)
-    display.fillCircle(x + 20, y, 6, WHITE);
+    // display.fillCircle(x + 20, y, 6, WHITE);
+    // display inverted text and rectangle so that user can identify the differetn text
 
   display.display();
 }
