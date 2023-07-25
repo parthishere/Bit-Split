@@ -603,19 +603,21 @@ void loop()
               sprintf(buf2, "%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X", epc[i][0], epc[i][1], epc[i][2], epc[i][3], epc[i][4], epc[i][5], epc[i][6], epc[i][7], epc[i][8], epc[i][9], epc[i][10], epc[i][11]);
               char *buf_temp2 = buf2;
 
-              bool found = false;
+              bool is_mine = false;
               
               for (int i = 0; i < ArraySerachNumLines; i++)
               {
                 if (strcmp(arrayForSearch[i].c_str(), buf_temp2) == 0)
                 {
-                  found = true;
+                  
                   Serial.print("found at index : ");
                   Serial.println(i);
                   if (arrayForCrossCheck[i] == "FALSE"){
+                    is_mine = true;
                     Serial.println("this is the fucking bomb");
                   }
                   else if(arrayForCrossCheck[i] == "TRUE"){
+                    
                     Serial.println("huh toys");
                   }
                   break;
@@ -638,7 +640,7 @@ void loop()
               //==> tft.fillRect(5, 90 + i * 30, 220, 25, BLACK);
 
               int rssi_for_print_in_tft = map(rssi_int[i], upper_range, lower_range, 4, 1);
-              ui(buf_temp, i + 1, rssi_for_print_in_tft, found);
+              ui(buf_temp, i + 1, rssi_for_print_in_tft, is_mine);
               last_millis_for_printing = millis();
 
               if (i == 0)
